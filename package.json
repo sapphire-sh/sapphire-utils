@@ -11,8 +11,7 @@
   "scripts": {
     "prebuild": "rm -fr ./lib",
     "build": "tsc",
-    "prepare": "npm run build",
-    "publish": ""
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",

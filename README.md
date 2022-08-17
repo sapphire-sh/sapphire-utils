@@ -3,5 +3,5 @@
 # usage
 
 ```sh
-# npm install -S @sapphire-sh/utils
+npm install -S @sapphire-sh/utils
 ```
