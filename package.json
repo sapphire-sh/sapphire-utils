@@ -1,0 +1,30 @@
+{
+  "name": "@sapphire-sh/utils",
+  "version": "1.0.0",
+  "description": "sapphire utils",
+  "module": "",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "prebuild": "rm -fr ./lib",
+    "build": "tsc",
+    "prepare": "npm run build",
+    "publish": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sapphire-sh/sapphire-utils.git"
+  },
+  "author": "sapphire",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sapphire-sh/sapphire-utils/issues"
+  },
+  "homepage": "https://github.com/sapphire-sh/sapphire-utils#readme",
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
