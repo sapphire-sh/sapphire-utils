@@ -1,8 +1,8 @@
 {
   "name": "@sapphire-sh/utils",
   "version": "1.8.0",
-  "description": "sapphire utils",
-  "module": "",
+  "description": "@sapphire-sh/utils",
+  "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
