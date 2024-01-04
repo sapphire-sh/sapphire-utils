@@ -2,7 +2,6 @@
   "name": "@sapphire-sh/utils",
   "version": "1.10.0",
   "description": "@sapphire-sh/utils",
-  "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
