@@ -1,4 +1,6 @@
-class QueueNode<T> {
+type Value = object | number | string | boolean;
+
+class QueueNode<T extends Value> {
 	private _next: QueueNode<T> | null = null;
 
 	public constructor(public readonly value: T) {}
@@ -12,15 +14,15 @@ class QueueNode<T> {
 	}
 }
 
-export class Queue<T> {
+export class Queue<T extends Value> {
 	private head: QueueNode<T> | null = null;
 	private tail: QueueNode<T> | null = null;
 	private _size = 0;
 
 	public constructor() {}
 
-	public enqueue(element: T): void {
-		const newNode = new QueueNode(element);
+	public enqueue(value: T): void {
+		const newNode = new QueueNode(value);
 		if (this.isEmpty() || !this.tail) {
 			this.head = newNode;
 			this.tail = newNode;
@@ -59,11 +61,17 @@ export class Queue<T> {
 		return this.head?.value;
 	}
 
-	public has(element: T): boolean {
+	public has(value: T | ((value: T) => boolean)): boolean {
 		let node = this.head;
 		while (node !== null) {
-			if (node.value === element) {
-				return true;
+			if (typeof value === 'function') {
+				if (value(node.value)) {
+					return true;
+				}
+			} else {
+				if (node.value === value) {
+					return true;
+				}
 			}
 			node = node.next;
 		}
