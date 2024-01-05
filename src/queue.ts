@@ -1,48 +1,72 @@
+class QueueNode<T> {
+	private _next: QueueNode<T> | null = null;
+
+	public constructor(public readonly value: T) {}
+
+	public get next() {
+		return this._next;
+	}
+
+	public setNext(newNode: QueueNode<T>) {
+		this._next = newNode;
+	}
+}
+
 export class Queue<T> {
-	private storage: Record<number, T> = {};
-	private head: number = 0;
-	private tail: number = 0;
+	private head: QueueNode<T> | null = null;
+	private tail: QueueNode<T> | null = null;
+	private _size = 0;
 
-	private increaseHead() {
-		if (this.head === Number.MAX_SAFE_INTEGER) {
-			this.head = 0;
-		} else {
-			this.head += 1;
-		}
-	}
-
-	private increaseTail() {
-		if (this.tail === Number.MAX_SAFE_INTEGER) {
-			this.tail = 0;
-		} else {
-			this.tail += 1;
-		}
-	}
+	public constructor() {}
 
 	public enqueue(element: T): void {
-		this.storage[this.tail] = element;
-		this.increaseTail();
+		const newNode = new QueueNode(element);
+		if (this.isEmpty() || !this.tail) {
+			this.head = newNode;
+			this.tail = newNode;
+		} else {
+			this.tail.setNext(newNode);
+			this.tail = newNode;
+		}
+		this._size += 1;
 	}
 
 	public dequeue(): T | undefined {
-		if (this.size === 0) {
+		if (this.isEmpty() || !this.head) {
 			return;
 		}
 
-		const element = this.storage[this.head];
-		delete this.storage[this.head];
-		this.increaseHead();
+		const value = this.head.value;
+		this.head = this.head.next;
+		this._size -= 1;
 
-		return element;
+		if (this.isEmpty()) {
+			this.tail = null;
+		}
+
+		return value;
 	}
 
 	public get size(): number {
-		const size = this.tail - this.head;
+		return this._size;
+	}
 
-		if (size < 0) {
-			return size + Number.MAX_SAFE_INTEGER;
+	public isEmpty(): boolean {
+		return this._size === 0;
+	}
+
+	public peek(): T | undefined {
+		return this.head?.value;
+	}
+
+	public has(element: T): boolean {
+		let node = this.head;
+		while (node !== null) {
+			if (node.value === element) {
+				return true;
+			}
+			node = node.next;
 		}
-
-		return size;
+		return false;
 	}
 }
