@@ -77,4 +77,17 @@ export class Queue<T extends Value> {
 		}
 		return false;
 	}
+
+	public toArray(): T[] {
+		let node = this.head;
+		if (!node) {
+			return [];
+		}
+		const array: T[] = [];
+		while (node) {
+			array.push(node.value);
+			node = node.next;
+		}
+		return array;
+	}
 }
