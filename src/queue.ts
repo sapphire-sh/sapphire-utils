@@ -49,6 +49,18 @@ export class Queue<T extends Value> {
 		return value;
 	}
 
+	public dequeueMultiple(count: number): T[] {
+		const array: T[] = [];
+		for (let i = 0; i < count; ++i) {
+			const value = this.dequeue();
+			if (!value) {
+				break;
+			}
+			array.push(value);
+		}
+		return array;
+	}
+
 	public get size(): number {
 		return this._size;
 	}
