@@ -1,6 +1,6 @@
 # @sapphire-sh/utils
 
-[![build](https://github.com/sapphire-sh/sapphire-utils/actions/workflows/build.yml/badge.svg)](https://github.com/sapphire-sh/sapphire-utils/actions/workflows/build.yml)
+[![npm-publish](https://github.com/sapphire-sh/sapphire-utils/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/sapphire-sh/sapphire-utils/actions/workflows/npm-publish.yml)
 [![license](https://img.shields.io/github/license/sapphire-sh/sapphire-utils)](https://github.com/sapphire-sh/sapphire-utils/blob/main/LICENSE)
 [![npm package version](https://img.shields.io/npm/v/@sapphire-sh/utils)](https://www.npmjs.com/package/@sapphire-sh/utils)
 [![github package version](https://img.shields.io/github/package-json/v/sapphire-sh/sapphire-utils?label=github)](https://github.com/sapphire-sh/sapphire-utils/packages/1601820)

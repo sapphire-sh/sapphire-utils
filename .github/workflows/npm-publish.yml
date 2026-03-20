@@ -10,6 +10,7 @@ env:
 permissions:
   id-token: write
   contents: write
+  packages: write
 
 jobs:
   publish:
@@ -30,6 +31,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: git push
+        run: |
+          git push --force
+          git push --tags
+
       - run: npm version minor
 
       - run: npm publish --access public --provenance
@@ -43,11 +49,6 @@ jobs:
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: git push
-        run: |
-          git push --force
-          git push --tags
 
       - run: gh release create --generate-notes `git describe --tags`
 
