@@ -31,12 +31,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: git push
-        run: |
-          git push --force
-          git push --tags
+      - run: git push --force
 
       - run: npm version minor
+
+      - run: git push
+
+      - run: git push --tags
 
       - run: npm publish --access public --provenance
 
