@@ -1,4 +1,4 @@
-name: build
+name: npm-publish
 
 on:
   push:
@@ -7,15 +7,19 @@ on:
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+permissions:
+  id-token: write
+  contents: write
 
+jobs:
+  publish:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
@@ -28,26 +32,24 @@ jobs:
 
       - run: npm version minor
 
-      - name: git push
-        run: |
-          git push
-          git push --tags
+      - run: npm publish --access public --provenance
 
-      - run: gh release create --generate-notes `git describe --tags`
-
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: '24'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@sapphire-sh'
 
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: git push
+        run: |
+          git push --force
+          git push --tags
+
+      - run: gh release create --generate-notes `git describe --tags`
 
       - if: always()
         uses: 8398a7/action-slack@v3
