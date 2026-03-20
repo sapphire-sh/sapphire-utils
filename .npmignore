@@ -4,3 +4,5 @@ src
 .gitignore
 .npmignore
 .prettierrc
+tsconfig.json
+prettier.config.ts
