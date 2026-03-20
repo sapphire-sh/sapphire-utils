@@ -1,4 +1,4 @@
-export const isNonNullable = <T extends object>(value?: T | null): value is NonNullable<T> => {
+export const isNonNullable = <T>(value?: T | null): value is NonNullable<T> => {
 	if (value === null) {
 		return false;
 	}
