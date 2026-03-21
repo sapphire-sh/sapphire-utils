@@ -1,3 +1,4 @@
-export const sleep = (ms: number): Promise<void> => {
-	return new Promise((resolve) => globalThis.setTimeout(resolve, ms));
+export const sleep = (ms: number, jitter = 0): Promise<void> => {
+	const delay = ms + Math.random() * jitter;
+	return new Promise((resolve) => globalThis.setTimeout(resolve, delay));
 };
