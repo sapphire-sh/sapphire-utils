@@ -7,7 +7,9 @@ on:
 jobs:
   publish:
     permissions:
-      contents: read
+      contents: write
+      packages: write
+      id-token: write
     uses: sapphire-sh/github-actions/.github/workflows/npm-publish-template.yml@main
     with:
       run_tests: true
