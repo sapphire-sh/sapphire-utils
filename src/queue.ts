@@ -19,8 +19,6 @@ export class Queue<T extends Value> {
 	private tail: QueueNode<T> | null = null;
 	private _size = 0;
 
-	public constructor() {}
-
 	public enqueue(value: T): void {
 		const newNode = new QueueNode(value);
 		if (this.isEmpty() || !this.tail) {
@@ -80,11 +78,9 @@ export class Queue<T extends Value> {
 				if (value(node.value)) {
 					return true;
 				}
-			} else {
-				if (node.value === value) {
+			} else if (node.value === value) {
 					return true;
 				}
-			}
 			node = node.next;
 		}
 		return false;

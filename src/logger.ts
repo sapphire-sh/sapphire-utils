@@ -23,7 +23,7 @@ function log(level: LogLevel, message: string, payload?: Payload) {
 
 	const ts = new Date().toISOString();
 	const prefix = `[${ts}] [${LogLevel[level].toUpperCase()}]`;
-	const payloadStr = payload !== undefined ? serializePayload(payload) : '';
+	const payloadStr = payload === undefined ? '' : serializePayload(payload);
 	const output = `${prefix} ${message}${payloadStr}`;
 
 	if (level === LogLevel.ERROR) {
