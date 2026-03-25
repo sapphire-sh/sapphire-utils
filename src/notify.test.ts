@@ -32,6 +32,10 @@ describe('notifySlack', () => {
 });
 
 describe('notifyMattermost', () => {
+	const baseUrl = 'https://mattermost.example.com';
+	const token = 'mytoken';
+	const channelId = 'abc123';
+
 	beforeEach(() => {
 		vi.stubGlobal('fetch', vi.fn());
 	});
@@ -43,18 +47,21 @@ describe('notifyMattermost', () => {
 	it('sends a POST request with the correct body', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
 
-		await notifyMattermost(mockUrl, 'hello');
+		await notifyMattermost(baseUrl, token, channelId, 'hello');
 
-		expect(fetch).toHaveBeenCalledWith(mockUrl, {
+		expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/v4/posts`, {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ text: 'hello' }),
+			headers: {
+				'Authorization': `Bearer ${token}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ channel_id: channelId, message: 'hello' }),
 		});
 	});
 
 	it('throws when the response is not ok', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 403 }));
 
-		await expect(notifyMattermost(mockUrl, 'hello')).rejects.toThrow('Mattermost webhook failed: HTTP 403');
+		await expect(notifyMattermost(baseUrl, token, channelId, 'hello')).rejects.toThrow('Mattermost post failed: HTTP 403');
 	});
 });
