@@ -4,59 +4,14 @@ on:
   push:
     branches: [main]
 
-env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-permissions:
-  id-token: write
-  contents: write
-  packages: write
-
 jobs:
   publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
-
-      - run: npm ci
-      - run: npm run build
-
-      - name: git config
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - run: git push --force
-
-      - run: npm version minor
-
-      - run: git push
-
-      - run: git push --tags
-
-      - run: npm publish --access public --provenance
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@sapphire-sh'
-
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - run: gh release create --generate-notes `git describe --tags`
-
-      - if: always()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took,pullRequest
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    uses: sapphire-sh/github-actions/.github/workflows/npm-publish-template.yml@main
+    with:
+      run_tests: true
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+      MATTERMOST_TOKEN: ${{ secrets.MATTERMOST_TOKEN }}
+      MATTERMOST_URL: ${{ secrets.MATTERMOST_URL }}
