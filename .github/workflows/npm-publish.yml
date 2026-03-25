@@ -6,6 +6,8 @@ on:
 
 jobs:
   publish:
+    permissions:
+      contents: read
     uses: sapphire-sh/github-actions/.github/workflows/npm-publish-template.yml@main
     with:
       run_tests: true
