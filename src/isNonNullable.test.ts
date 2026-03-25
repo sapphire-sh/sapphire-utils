@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isNonNullable } from '../src/isNonNullable';
+import { isNonNullable } from './isNonNullable';
 
 describe('isNonNullable', () => {
 	it('returns true for non-null, non-undefined values', () => {

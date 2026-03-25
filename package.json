@@ -11,7 +11,8 @@
     "prebuild": "rm -fr ./lib",
     "build": "tsc",
     "prepare": "npm run build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
     "prettier-plugin-organize-imports": ">=4.0.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.1",
     "prettier": "^3.8.1",
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^5.9.3",

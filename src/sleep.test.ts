@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sleep } from '../src/sleep';
+import { sleep } from './sleep';
 
 describe('sleep', () => {
 	beforeEach(() => {

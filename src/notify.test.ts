@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { notifyMattermost, notifySlack } from '../src/notify';
+import { notifyMattermost, notifySlack } from './notify';
 
 const mockUrl = 'https://example.com/webhook';
 

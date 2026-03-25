@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getEnumValue } from '../src/getEnumValue';
+import { getEnumValue } from './getEnumValue';
 
 enum Color {
 	Red = 'red',
