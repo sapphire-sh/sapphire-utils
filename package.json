@@ -10,6 +10,7 @@
       "types": "./lib/index.d.ts"
     },
     "./eslint": {
+      "import": "./lib/esm/eslint.js",
       "require": "./lib/eslint.js",
       "types": "./lib/eslint.d.ts"
     },
@@ -23,7 +24,7 @@
   ],
   "scripts": {
     "prebuild": "rm -fr ./lib",
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json && printf '{\"type\":\"module\"}' > lib/esm/package.json",
     "prepare": "npm run build",
     "test": "vitest run",
     "coverage": "vitest run --coverage"
