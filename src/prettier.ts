@@ -6,6 +6,9 @@ const config: Config = {
 	tabWidth: 2,
 	useTabs: true,
 	printWidth: 120,
+	trailingComma: 'all',
+	arrowParens: 'always',
+	endOfLine: 'lf',
 	plugins: ['prettier-plugin-organize-imports'],
 }
 
