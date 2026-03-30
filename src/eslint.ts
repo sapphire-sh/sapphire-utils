@@ -1,6 +1,6 @@
 import eslint from '@eslint/js';
-import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
+import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
@@ -21,12 +21,12 @@ export default defineConfig(
 			'prefer-template': 'error',
 			'prefer-destructuring': 'error',
 			'prefer-arrow-callback': 'error',
-			'eqeqeq': ['error', 'always'],
+			eqeqeq: ['error', 'always'],
 			'object-shorthand': 'error',
 			'no-else-return': 'error',
 			'arrow-body-style': ['error', 'as-needed'],
 			'func-style': ['error', 'expression'],
-			'yoda': 'error',
+			yoda: 'error',
 
 			// TypeScript
 			'@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],

@@ -1,4 +1,4 @@
-import type { Config } from 'prettier'
+import type { Config } from 'prettier';
 
 const config: Config = {
 	singleQuote: true,
@@ -10,6 +10,6 @@ const config: Config = {
 	arrowParens: 'always',
 	endOfLine: 'lf',
 	plugins: ['prettier-plugin-organize-imports'],
-}
+};
 
-export default config
+export default config;

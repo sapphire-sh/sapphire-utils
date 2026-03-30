@@ -1,5 +1,5 @@
 {
-    "sonarCloudOrganization": "sapphire-sh",
-    "projectKey": "sapphire-sh_sapphire-utils",
-    "region": "EU"
+	"sonarCloudOrganization": "sapphire-sh",
+	"projectKey": "sapphire-sh_sapphire-utils",
+	"region": "EU"
 }

@@ -1,6 +1,6 @@
 {
-    "sonarlint.connectedMode.project": {
-        "connectionId": "sapphire-sh",
-        "projectKey": "sapphire-sh_sapphire-utils"
-    }
+	"sonarlint.connectedMode.project": {
+		"connectionId": "sapphire-sh",
+		"projectKey": "sapphire-sh_sapphire-utils"
+	}
 }

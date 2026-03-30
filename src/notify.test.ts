@@ -52,7 +52,7 @@ describe('notifyMattermost', () => {
 		expect(fetch).toHaveBeenCalledWith(`${baseUrl}/api/v4/posts`, {
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${token}`,
+				Authorization: `Bearer ${token}`,
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({ channel_id: channelId, message: 'hello' }),
@@ -62,6 +62,8 @@ describe('notifyMattermost', () => {
 	it('throws when the response is not ok', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 403 }));
 
-		await expect(notifyMattermost(baseUrl, token, channelId, 'hello')).rejects.toThrow('Mattermost post failed: HTTP 403');
+		await expect(notifyMattermost(baseUrl, token, channelId, 'hello')).rejects.toThrow(
+			'Mattermost post failed: HTTP 403',
+		);
 	});
 });
