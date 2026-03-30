@@ -4,6 +4,20 @@
   "description": "@sapphire-sh/utils",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    },
+    "./eslint": {
+      "require": "./lib/eslint.js",
+      "types": "./lib/eslint.d.ts"
+    },
+    "./prettier": {
+      "require": "./lib/prettier.js",
+      "types": "./lib/prettier.d.ts"
+    }
+  },
   "files": [
     "lib/**/*"
   ],
