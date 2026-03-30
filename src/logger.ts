@@ -7,16 +7,16 @@ export enum LogLevel {
 
 type Payload = Record<string, unknown> | Error;
 
-function serializePayload(payload: Payload): string {
+const serializePayload = (payload: Payload): string => {
 	const json = JSON.stringify(
 		payload instanceof Error ? { error: payload.message, name: payload.name, stack: payload.stack } : payload,
 	);
 	return json.padStart(json.length + 1);
-}
+};
 
 let currentLevel: LogLevel = LogLevel.INFO;
 
-function log(level: LogLevel, message: string, payload?: Payload) {
+const log = (level: LogLevel, message: string, payload?: Payload) => {
 	if (level < currentLevel) {
 		return;
 	}
@@ -35,7 +35,7 @@ function log(level: LogLevel, message: string, payload?: Payload) {
 	} else {
 		console.log(output);
 	}
-}
+};
 
 export const logger = {
 	debug: (message: string, payload?: Payload) => log(LogLevel.DEBUG, message, payload),
@@ -44,7 +44,7 @@ export const logger = {
 	error: (message: string, payload?: Payload) => log(LogLevel.ERROR, message, payload),
 	setLevel: (level: LogLevel | string) => {
 		if (typeof level === 'string') {
-			const resolved = LogLevel[level.toUpperCase() as keyof typeof LogLevel];
+			const resolved = LogLevel[level.toUpperCase() as keyof typeof LogLevel] as LogLevel | undefined;
 			if (resolved === undefined) {
 				console.warn(`[logger] Invalid log level: "${level}", keeping current level`);
 				return;

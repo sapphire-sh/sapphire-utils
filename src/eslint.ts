@@ -68,6 +68,6 @@ export default defineConfig(
 		},
 	},
 	{
-		ignores: ['**/*.json', 'node_modules/'],
+		ignores: ['**/*.json', 'node_modules/', 'coverage/', 'lib/'],
 	},
 );

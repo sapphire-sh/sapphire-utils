@@ -1,75 +1,80 @@
 {
-  "name": "@sapphire-sh/utils",
-  "version": "1.39.0",
-  "description": "@sapphire-sh/utils",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "exports": {
-    ".": {
-      "require": "./lib/index.js",
-      "types": "./lib/index.d.ts"
-    },
-    "./eslint": {
-      "import": "./lib/esm/eslint.js",
-      "require": "./lib/eslint.js",
-      "types": "./lib/eslint.d.ts"
-    },
-    "./prettier": {
-      "require": "./lib/prettier.js",
-      "types": "./lib/prettier.d.ts"
-    }
-  },
-  "files": [
-    "lib/**/*"
-  ],
-  "scripts": {
-    "prebuild": "rm -fr ./lib",
-    "build": "tsc && tsc -p tsconfig.esm.json && printf '{\"type\":\"module\"}' > lib/esm/package.json",
-    "prepare": "npm run build",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sapphire-sh/sapphire-utils.git"
-  },
-  "author": "sapphire",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/sapphire-sh/sapphire-utils/issues"
-  },
-  "homepage": "https://github.com/sapphire-sh/sapphire-utils#readme",
-  "peerDependencies": {
-    "@eslint/js": ">=9.0.0",
-    "eslint": ">=9.0.0",
-    "eslint-config-prettier": ">=9.0.0",
-    "prettier": ">=3.0.0",
-    "prettier-plugin-organize-imports": ">=4.0.0",
-    "typescript-eslint": ">=8.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@eslint/js": {
-      "optional": true
-    },
-    "eslint": {
-      "optional": true
-    },
-    "eslint-config-prettier": {
-      "optional": true
-    },
-    "typescript-eslint": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.24.0",
-    "@vitest/coverage-v8": "^4.1.1",
-    "eslint": "^9.24.0",
-    "eslint-config-prettier": "^10.1.2",
-    "prettier": "^3.8.1",
-    "prettier-plugin-organize-imports": "^4.3.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.29.1",
-    "vitest": "^4.1.1"
-  }
+	"name": "@sapphire-sh/utils",
+	"version": "1.39.0",
+	"description": "@sapphire-sh/utils",
+	"type": "module",
+	"main": "./lib/index.js",
+	"types": "./lib/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./lib/index.js",
+			"types": "./lib/index.d.ts"
+		},
+		"./eslint": {
+			"import": "./lib/esm/eslint.js",
+			"require": "./lib/eslint.js",
+			"types": "./lib/eslint.d.ts"
+		},
+		"./prettier": {
+			"require": "./lib/prettier.js",
+			"types": "./lib/prettier.d.ts"
+		}
+	},
+	"files": [
+		"lib/**/*"
+	],
+	"scripts": {
+		"prebuild": "rm -fr ./lib",
+		"build": "tsc && tsc -p tsconfig.esm.json && printf '{\"type\":\"module\"}' > lib/esm/package.json",
+		"prepare": "npm run build",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"prettier": "prettier --check .",
+		"prettier:fix": "prettier --write .",
+		"test": "vitest run",
+		"coverage": "vitest run --coverage"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/sapphire-sh/sapphire-utils.git"
+	},
+	"author": "sapphire",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/sapphire-sh/sapphire-utils/issues"
+	},
+	"homepage": "https://github.com/sapphire-sh/sapphire-utils#readme",
+	"peerDependencies": {
+		"@eslint/js": ">=9.0.0",
+		"eslint": ">=9.0.0",
+		"eslint-config-prettier": ">=9.0.0",
+		"prettier": ">=3.0.0",
+		"prettier-plugin-organize-imports": ">=4.0.0",
+		"typescript-eslint": ">=8.0.0"
+	},
+	"peerDependenciesMeta": {
+		"@eslint/js": {
+			"optional": true
+		},
+		"eslint": {
+			"optional": true
+		},
+		"eslint-config-prettier": {
+			"optional": true
+		},
+		"typescript-eslint": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.24.0",
+		"@vitest/coverage-v8": "^4.1.1",
+		"eslint": "^9.24.0",
+		"eslint-config-prettier": "^10.1.2",
+		"prettier": "^3.8.1",
+		"prettier-plugin-organize-imports": "^4.3.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.29.1",
+		"vitest": "^4.1.1"
+	}
 }

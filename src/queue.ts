@@ -36,7 +36,7 @@ export class Queue<T extends Value> {
 			return;
 		}
 
-		const value = this.head.value;
+		const { value } = this.head;
 		this.head = this.head.next;
 		this._size -= 1;
 
@@ -51,7 +51,7 @@ export class Queue<T extends Value> {
 		const array: T[] = [];
 		for (let i = 0; i < count; ++i) {
 			const value = this.dequeue();
-			if (!value) {
+			if (value === undefined) {
 				break;
 			}
 			array.push(value);
@@ -71,16 +71,23 @@ export class Queue<T extends Value> {
 		return this.head?.value;
 	}
 
-	public has(value: T | ((value: T) => boolean)): boolean {
+	public has(value: T): boolean {
 		let node = this.head;
 		while (node !== null) {
-			if (typeof value === 'function') {
-				if (value(node.value)) {
-					return true;
-				}
-			} else if (node.value === value) {
-					return true;
-				}
+			if (node.value === value) {
+				return true;
+			}
+			node = node.next;
+		}
+		return false;
+	}
+
+	public some(predicate: (value: T) => boolean): boolean {
+		let node = this.head;
+		while (node !== null) {
+			if (predicate(node.value)) {
+				return true;
+			}
 			node = node.next;
 		}
 		return false;

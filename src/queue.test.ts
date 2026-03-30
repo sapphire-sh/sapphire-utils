@@ -65,12 +65,12 @@ describe('Queue', () => {
 		expect(q.has(99)).toBe(false);
 	});
 
-	it('has works with a predicate function', () => {
+	it('some works with a predicate function', () => {
 		const q = new Queue<number>();
 		q.enqueue(3);
 		q.enqueue(7);
-		expect(q.has((v) => v > 5)).toBe(true);
-		expect(q.has((v) => v > 10)).toBe(false);
+		expect(q.some((v) => v > 5)).toBe(true);
+		expect(q.some((v) => v > 10)).toBe(false);
 	});
 
 	it('dequeueMultiple returns up to count items', () => {
