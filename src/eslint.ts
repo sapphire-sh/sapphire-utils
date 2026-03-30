@@ -27,6 +27,7 @@ export default defineConfig(
 			'arrow-body-style': ['error', 'as-needed'],
 			'func-style': ['error', 'expression'],
 			yoda: 'error',
+			curly: 'error',
 
 			// TypeScript
 			'@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
