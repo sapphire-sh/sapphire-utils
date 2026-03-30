@@ -20,10 +20,14 @@
 			"import": "./lib/esm/prettier.js",
 			"require": "./lib/prettier.js",
 			"types": "./lib/prettier.d.ts"
-		}
+		},
+		"./tsconfig": "./tsconfig.json",
+		"./tsconfig.esm": "./tsconfig.esm.json"
 	},
 	"files": [
-		"lib/**/*"
+		"lib/**/*",
+		"tsconfig.json",
+		"tsconfig.esm.json"
 	],
 	"scripts": {
 		"prebuild": "rm -fr ./lib",
