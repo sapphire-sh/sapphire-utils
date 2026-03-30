@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 export const notifySlack = async (url: string, text: string): Promise<void> => {
 	logger.debug('[notifySlack] posting to webhook', { textLength: text.length });
