@@ -12,9 +12,10 @@ describe('sleep', () => {
 
 	it('resolves after the specified delay', async () => {
 		let resolved = false;
-		const promise = sleep(500).then(() => {
+		const promise = (async () => {
+			await sleep(500);
 			resolved = true;
-		});
+		})();
 
 		expect(resolved).toBe(false);
 		vi.advanceTimersByTime(500);

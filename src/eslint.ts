@@ -1,5 +1,6 @@
 import eslint from '@eslint/js';
 import prettier from 'eslint-config-prettier';
+import promise from 'eslint-plugin-promise';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
@@ -7,6 +8,7 @@ export default defineConfig(
 	eslint.configs.recommended,
 	...tseslint.configs.recommended,
 	prettier,
+	promise.configs['flat/recommended'],
 	{
 		rules: {
 			// General
@@ -56,6 +58,20 @@ export default defineConfig(
 		rules: {
 			'@typescript-eslint/no-floating-promises': 'error',
 			'@typescript-eslint/no-misused-promises': 'error',
+			'@typescript-eslint/promise-function-async': 'error',
+			'promise/prefer-await-to-then': 'error',
+			'promise/prefer-await-to-callbacks': 'error',
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'CallExpression[callee.property.name="then"]',
+					message: 'Use async/await instead of .then()',
+				},
+				{
+					selector: 'CallExpression[callee.property.name="catch"]',
+					message: 'Use try/catch with async/await instead of .catch()',
+				},
+			],
 			'@typescript-eslint/no-unnecessary-condition': 'error',
 			'@typescript-eslint/switch-exhaustiveness-check': 'error',
 			'@typescript-eslint/return-await': ['error', 'in-try-catch'],
