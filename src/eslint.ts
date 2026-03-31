@@ -122,7 +122,7 @@ export default defineConfig(
 			'@typescript-eslint/promise-function-async': 'error',
 			'@typescript-eslint/return-await': ['error', 'in-try-catch'],
 			'@typescript-eslint/strict-boolean-expressions': 'error',
-			'@typescript-eslint/switch-exhaustiveness-check': 'error',
+			'@typescript-eslint/switch-exhaustiveness-check': ['error', { allowDefaultCaseForExhaustiveSwitch: true }],
 			'promise/prefer-await-to-callbacks': 'error',
 			'promise/prefer-await-to-then': 'error',
 		},
