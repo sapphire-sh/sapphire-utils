@@ -79,7 +79,7 @@ export default defineConfig(
 			'@typescript-eslint/array-type': ['error', { default: 'array' }],
 			'@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
 			'@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-			'@typescript-eslint/consistent-type-imports': 'error',
+			'@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'separate-type-imports' }],
 			'@typescript-eslint/naming-convention': [
 				'error',
 				{
