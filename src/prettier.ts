@@ -9,6 +9,7 @@ const config: Config = {
 	trailingComma: 'all',
 	arrowParens: 'always',
 	endOfLine: 'lf',
+	plugins: ['prettier-plugin-organize-imports'],
 };
 
 export default config;
