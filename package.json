@@ -1,6 +1,6 @@
 {
 	"name": "@sapphire-sh/utils",
-	"version": "1.45.0",
+	"version": "1.46.0",
 	"description": "@sapphire-sh/utils",
 	"type": "module",
 	"main": "./lib/index.js",
