@@ -48,6 +48,7 @@ export default defineConfig(
 			'@typescript-eslint/no-explicit-any': 'warn',
 			'@typescript-eslint/no-non-null-assertion': 'warn',
 			'@typescript-eslint/no-unnecessary-type-assertion': 'error',
+			'@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
 			'@typescript-eslint/array-type': ['error', { default: 'array' }],
 			'@typescript-eslint/prefer-nullish-coalescing': 'error',
 			'@typescript-eslint/prefer-optional-chain': 'error',
