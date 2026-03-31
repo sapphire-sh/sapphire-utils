@@ -71,6 +71,10 @@ export default defineConfig(
 					selector: 'CallExpression[callee.property.name="catch"]',
 					message: 'Use try/catch with async/await instead of .catch()',
 				},
+				{
+					selector: 'SwitchCase > *.consequent[type!="BlockStatement"]',
+					message: 'Switch case bodies must be wrapped in a block statement (braces).',
+				},
 			],
 			'@typescript-eslint/no-unnecessary-condition': 'error',
 			'@typescript-eslint/switch-exhaustiveness-check': 'error',
