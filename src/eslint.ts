@@ -17,6 +17,7 @@ export default defineConfig(
 			eqeqeq: ['error', 'always'],
 			'func-style': ['error', 'expression'],
 			'no-console': 'off',
+			'sort-imports': 'error',
 			'no-constant-condition': ['error', { checkLoops: false }],
 			'no-else-return': 'error',
 			'no-negated-condition': 'error',
