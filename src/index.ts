@@ -1,4 +1,5 @@
 export { getEnumValue } from './getEnumValue.js';
+export type { Last, Tail } from './types.js';
 export { isNonNullable } from './isNonNullable.js';
 export { LogLevel, logger } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
