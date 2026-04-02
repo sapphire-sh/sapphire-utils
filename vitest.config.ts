@@ -1,5 +1,5 @@
 import { mergeConfig } from 'vitest/config';
-import base from './lib/esm/vitest.js';
+import base from './src/vitest.js';
 
 export default mergeConfig(base, {
 	test: {
