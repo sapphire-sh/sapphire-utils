@@ -42,7 +42,7 @@
 		"tsconfig.esm.json"
 	],
 	"scripts": {
-		"init": "node bin/sapphire-init.js",
+		"bootstrap": "node bin/sapphire-init.js",
 		"prebuild": "rm -fr ./lib",
 		"build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && printf '{\"type\":\"module\"}' > lib/esm/package.json",
 		"prepare": "npm run build",
