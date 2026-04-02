@@ -4,6 +4,7 @@
 		"lib": ["ESNext", "DOM"],
 		"module": "commonjs",
 		"moduleResolution": "node",
+		"ignoreDeprecations": "6.0",
 		"outDir": "./lib",
 		"declaration": true,
 		"declarationMap": true,
@@ -11,6 +12,7 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"types": ["node"]
 	}
 }
