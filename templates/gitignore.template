@@ -1,9 +1,10 @@
-.DS_Store
 *.log
 *.tsbuildinfo
+.DS_Store
 .env
 build/
-dist/
 coverage/
 data/
+dist/
 lib/
+node_modules/
