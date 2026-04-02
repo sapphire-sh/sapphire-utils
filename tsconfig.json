@@ -2,9 +2,8 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"lib": ["ESNext", "DOM"],
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"ignoreDeprecations": "6.0",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
 		"outDir": "./lib",
 		"declaration": true,
 		"declarationMap": true,

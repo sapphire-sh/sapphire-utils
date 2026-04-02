@@ -10,46 +10,45 @@
 	},
 	"exports": {
 		".": {
-			"import": "./lib/esm/index.js",
-			"require": "./lib/index.js",
+			"import": "./lib/index.js",
+			"require": "./lib/cjs/index.js",
 			"types": "./lib/index.d.ts"
 		},
 		"./eslint": {
-			"import": "./lib/esm/eslint.js",
-			"require": "./lib/eslint.js",
+			"import": "./lib/eslint.js",
+			"require": "./lib/cjs/eslint.js",
 			"types": "./lib/eslint.d.ts"
 		},
 		"./prettier": {
-			"import": "./lib/esm/prettier.js",
-			"require": "./lib/prettier.js",
+			"import": "./lib/prettier.js",
+			"require": "./lib/cjs/prettier.js",
 			"types": "./lib/prettier.d.ts"
 		},
 		"./vitest": {
-			"import": "./lib/esm/vitest.js",
-			"require": "./lib/vitest.js",
+			"import": "./lib/vitest.js",
+			"require": "./lib/cjs/vitest.js",
 			"types": "./lib/vitest.d.ts"
 		},
 		"./node": {
-			"import": "./lib/esm/node.js",
-			"require": "./lib/node.js",
+			"import": "./lib/node.js",
+			"require": "./lib/cjs/node.js",
 			"types": "./lib/node.d.ts"
 		},
 		"./tsconfig": "./tsconfig.json",
 		"./tsconfig.json": "./tsconfig.json",
-		"./tsconfig.esm": "./tsconfig.esm.json",
-		"./tsconfig.esm.json": "./tsconfig.esm.json"
+		"./tsconfig.esm": "./tsconfig.json",
+		"./tsconfig.esm.json": "./tsconfig.json"
 	},
 	"files": [
 		"bin/**/*",
 		"lib/**/*",
 		"templates",
-		"tsconfig.json",
-		"tsconfig.esm.json"
+		"tsconfig.json"
 	],
 	"scripts": {
 		"bootstrap": "node bin/sapphire-bootstrap.js",
 		"prebuild": "rm -fr ./lib",
-		"build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && printf '{\"type\":\"module\"}' > lib/esm/package.json",
+		"build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.cjs.json && printf '{\"type\":\"commonjs\"}' > lib/cjs/package.json",
 		"prepare": "npm run build",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
