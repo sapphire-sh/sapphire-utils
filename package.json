@@ -22,7 +22,9 @@
 			"types": "./lib/prettier.d.ts"
 		},
 		"./tsconfig": "./tsconfig.json",
-		"./tsconfig.esm": "./tsconfig.esm.json"
+		"./tsconfig.json": "./tsconfig.json",
+		"./tsconfig.esm": "./tsconfig.esm.json",
+		"./tsconfig.esm.json": "./tsconfig.esm.json"
 	},
 	"files": [
 		"lib/**/*",
