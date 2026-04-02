@@ -1,4 +1,6 @@
 export { getEnumValue } from './getEnumValue.js';
+export { HttpError, fetchWithRetry } from './http.js';
+export type { FetchRetryOptions } from './http.js';
 export { isNonNullable } from './isNonNullable.js';
 export { LogLevel, logger } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
