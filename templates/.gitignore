@@ -1,4 +1,3 @@
-# sapphire-init:start
 .DS_Store
 *.log
 *.tsbuildinfo
@@ -7,4 +6,3 @@ build/
 dist/
 coverage/
 lib/
-# sapphire-init:end
