@@ -134,6 +134,6 @@ export default defineConfig(
 		},
 	},
 	{
-		ignores: ['**/*.json', 'node_modules/', 'coverage/', 'lib/'],
+		ignores: ['*.config.js', '**/*.json', 'coverage/', 'dist/', 'lib/', 'node_modules/'],
 	},
 );
