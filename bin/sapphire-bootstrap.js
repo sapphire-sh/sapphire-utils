@@ -8,17 +8,22 @@ const START_MARKER = '# @sapphire-sh/utils:start';
 const END_MARKER = '# @sapphire-sh/utils:end';
 
 const sectioned = new Set(['.gitignore']);
+const renameMap = new Map([
+	['editorconfig.template', '.editorconfig'],
+	['gitignore.template', '.gitignore'],
+	['prettierignore.template', '.prettierignore'],
+]);
 
 const templatesDir = join(fileURLToPath(import.meta.url), '..', '..', 'templates');
 const cwd = process.cwd();
 
-const writeSectioned = (filename, content) => {
-	const filepath = join(cwd, filename);
+const writeSectioned = (outputName, content) => {
+	const filepath = join(cwd, outputName);
 	const section = `${START_MARKER}\n${content}${END_MARKER}`;
 
 	if (existsSync(filepath) === false) {
 		writeFileSync(filepath, `${section}\n`);
-		console.log(`wrote ${filename}`);
+		console.log(`wrote ${outputName}`);
 		return;
 	}
 
@@ -34,15 +39,16 @@ const writeSectioned = (filename, content) => {
 		writeFileSync(filepath, `${section}\n\n${existing}`);
 	}
 
-	console.log(`wrote ${filename}`);
+	console.log(`wrote ${outputName}`);
 };
 
 for (const filename of readdirSync(templatesDir)) {
-	if (sectioned.has(filename)) {
+	const outputName = renameMap.get(filename) ?? filename;
+	if (sectioned.has(outputName)) {
 		const content = readFileSync(join(templatesDir, filename), 'utf-8');
-		writeSectioned(filename, content);
+		writeSectioned(outputName, content);
 	} else {
-		copyFileSync(join(templatesDir, filename), join(cwd, filename));
-		console.log(`wrote ${filename}`);
+		copyFileSync(join(templatesDir, filename), join(cwd, outputName));
+		console.log(`wrote ${outputName}`);
 	}
 }
