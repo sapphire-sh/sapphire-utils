@@ -36,14 +36,15 @@
 		},
 		"./tsconfig": "./tsconfig.json",
 		"./tsconfig.json": "./tsconfig.json",
-		"./tsconfig.esm": "./tsconfig.json",
-		"./tsconfig.esm.json": "./tsconfig.json"
+		"./tsconfig.cjs": "./tsconfig.cjs.json",
+		"./tsconfig.cjs.json": "./tsconfig.cjs.json"
 	},
 	"files": [
 		"bin/**/*",
 		"lib/**/*",
 		"templates",
-		"tsconfig.json"
+		"tsconfig.json",
+		"tsconfig.cjs.json"
 	],
 	"scripts": {
 		"bootstrap": "node bin/sapphire-bootstrap.js",
