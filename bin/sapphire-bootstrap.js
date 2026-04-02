@@ -16,7 +16,7 @@ const writeSectioned = (filename, content) => {
 	const filepath = join(cwd, filename);
 	const section = `${START_MARKER}\n${content}${END_MARKER}`;
 
-	if (!existsSync(filepath)) {
+	if (existsSync(filepath) === false) {
 		writeFileSync(filepath, `${section}\n`);
 		console.log(`wrote ${filename}`);
 		return;
