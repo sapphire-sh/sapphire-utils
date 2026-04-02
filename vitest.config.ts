@@ -1,11 +1,10 @@
-import { defineConfig } from 'vitest/config';
+import { mergeConfig } from 'vitest/config';
+import base from './lib/esm/vitest.js';
 
-export default defineConfig({
+export default mergeConfig(base, {
 	test: {
 		coverage: {
-			provider: 'v8',
 			reporter: ['lcov'],
-			include: ['src/**/*.ts'],
 			exclude: ['src/index.ts', 'src/prettier.ts'],
 		},
 	},

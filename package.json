@@ -24,6 +24,11 @@
 			"require": "./lib/prettier.js",
 			"types": "./lib/prettier.d.ts"
 		},
+		"./vitest": {
+			"import": "./lib/esm/vitest.js",
+			"require": "./lib/vitest.js",
+			"types": "./lib/vitest.d.ts"
+		},
 		"./tsconfig": "./tsconfig.json",
 		"./tsconfig.json": "./tsconfig.json",
 		"./tsconfig.esm": "./tsconfig.esm.json",
@@ -65,7 +70,8 @@
 		"eslint-plugin-promise": ">=7.0.0",
 		"prettier": ">=3.0.0",
 		"prettier-plugin-organize-imports": ">=4.0.0",
-		"typescript-eslint": ">=8.0.0"
+		"typescript-eslint": ">=8.0.0",
+		"vitest": ">=4.0.0"
 	},
 	"peerDependenciesMeta": {
 		"@eslint/js": {
@@ -81,6 +87,9 @@
 			"optional": true
 		},
 		"typescript-eslint": {
+			"optional": true
+		},
+		"vitest": {
 			"optional": true
 		}
 	},
