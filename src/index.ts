@@ -1,8 +1,8 @@
 export { getEnumValue } from './getEnumValue.js';
-export type { Last, Tail } from './types.js';
 export { isNonNullable } from './isNonNullable.js';
 export { LogLevel, logger } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
 export { Queue } from './queue.js';
 export { sleep } from './sleep.js';
 export { throttle } from './throttle.js';
+export type { Last, Tail } from './types.js';

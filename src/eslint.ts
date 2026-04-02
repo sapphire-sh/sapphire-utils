@@ -17,7 +17,6 @@ export default defineConfig(
 			eqeqeq: ['error', 'always'],
 			'func-style': ['error', 'expression'],
 			'no-console': 'off',
-			'sort-imports': ['error', { ignoreDeclarationSort: true }],
 			'no-constant-condition': ['error', { checkLoops: false }],
 			'no-else-return': 'error',
 			'no-negated-condition': 'error',
@@ -25,10 +24,10 @@ export default defineConfig(
 			'no-param-reassign': 'error',
 			'no-restricted-globals': [
 				'error',
-				{ name: 'parseInt', message: 'Use Number.parseInt instead.' },
-				{ name: 'parseFloat', message: 'Use Number.parseFloat instead.' },
-				{ name: 'isNaN', message: 'Use Number.isNaN instead.' },
 				{ name: 'isFinite', message: 'Use Number.isFinite instead.' },
+				{ name: 'isNaN', message: 'Use Number.isNaN instead.' },
+				{ name: 'parseFloat', message: 'Use Number.parseFloat instead.' },
+				{ name: 'parseInt', message: 'Use Number.parseInt instead.' },
 			],
 			'no-restricted-imports': [
 				'error',
@@ -73,6 +72,7 @@ export default defineConfig(
 			'prefer-const': 'error',
 			'prefer-destructuring': 'error',
 			'prefer-template': 'error',
+			'sort-imports': ['error', { ignoreDeclarationSort: true }],
 			yoda: 'error',
 
 			// TypeScript
