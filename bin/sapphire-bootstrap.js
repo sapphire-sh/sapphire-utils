@@ -4,8 +4,8 @@ import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } fr
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const START_MARKER = '# sapphire-init:start';
-const END_MARKER = '# sapphire-init:end';
+const START_MARKER = '# @sapphire-sh/utils:start';
+const END_MARKER = '# @sapphire-sh/utils:end';
 
 const sectioned = new Set(['.gitignore']);
 

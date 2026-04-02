@@ -6,7 +6,7 @@
 	"main": "./lib/index.js",
 	"types": "./lib/index.d.ts",
 	"bin": {
-		"sapphire-init": "./bin/sapphire-init.js"
+		"sapphire-bootstrap": "./bin/sapphire-bootstrap.js"
 	},
 	"exports": {
 		".": {
@@ -42,7 +42,7 @@
 		"tsconfig.esm.json"
 	],
 	"scripts": {
-		"bootstrap": "node bin/sapphire-init.js",
+		"bootstrap": "node bin/sapphire-bootstrap.js",
 		"prebuild": "rm -fr ./lib",
 		"build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && printf '{\"type\":\"module\"}' > lib/esm/package.json",
 		"prepare": "npm run build",
