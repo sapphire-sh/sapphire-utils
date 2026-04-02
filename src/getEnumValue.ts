@@ -1,4 +1,4 @@
-export const getEnumValue = <T extends string, TEnum extends string>(value: { [key in T]: TEnum }) => {
+export const getEnumValue = <TEnum extends string>(value: Record<string, TEnum>) => {
 	const enumValues = Object.values(value);
-	return (value?: string): TEnum | null => (enumValues.includes(value) ? (value as TEnum) : null);
+	return (input?: string): TEnum | null => enumValues.find((e) => e === input) ?? null;
 };

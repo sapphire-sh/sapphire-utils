@@ -16,7 +16,11 @@ export interface FetchRetryOptions {
 	timeoutMs?: number;
 }
 
-export const fetchWithRetry = async (url: string, init?: RequestInit, retryOptions?: FetchRetryOptions): Promise<Response> => {
+export const fetchWithRetry = async (
+	url: string,
+	init?: RequestInit,
+	retryOptions?: FetchRetryOptions,
+): Promise<Response> => {
 	const { maxRetries = 3, baseDelayMs = 1000, jitterMs = 500, timeoutMs = 30000 } = retryOptions ?? {};
 
 	for (let attempt = 0; attempt <= maxRetries; attempt++) {

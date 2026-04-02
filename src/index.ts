@@ -1,6 +1,5 @@
 export { formatDuration, toLocalISOString } from './date.js';
 export { serializeError } from './error.js';
-export { escapeHtml } from './string.js';
 export { getEnumValue } from './getEnumValue.js';
 export { HttpError, fetchWithRetry } from './http.js';
 export type { FetchRetryOptions } from './http.js';
@@ -9,5 +8,6 @@ export { LogLevel, logger } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
 export { Queue } from './queue.js';
 export { sleep } from './sleep.js';
+export { escapeHtml } from './string.js';
 export { throttle } from './throttle.js';
 export type { Last, Tail } from './types.js';

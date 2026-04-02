@@ -1,1 +1,1 @@
-export { default } from './lib/esm/prettier.js';
+export { default } from './lib/prettier.js';

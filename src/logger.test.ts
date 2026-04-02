@@ -61,7 +61,7 @@ describe('logger', () => {
 
 	it('includes payload in output', () => {
 		logger.info('with payload', { key: 'value' });
-		const output = vi.mocked(console.log).mock.calls[0][0] as string;
+		const output = String(vi.mocked(console.log).mock.calls[0][0]);
 		expect(output).toContain('"key"');
 		expect(output).toContain('"value"');
 	});
@@ -69,7 +69,7 @@ describe('logger', () => {
 	it('serializes Error payloads', () => {
 		const err = new Error('boom');
 		logger.error('with error', err);
-		const output = vi.mocked(console.error).mock.calls[0][0] as string;
+		const output = String(vi.mocked(console.error).mock.calls[0][0]);
 		expect(output).toContain('boom');
 	});
 });

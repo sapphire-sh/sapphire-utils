@@ -44,7 +44,13 @@ export const logger = {
 	error: (message: string, payload?: Payload) => log(LogLevel.ERROR, message, payload),
 	setLevel: (level: LogLevel | string) => {
 		if (typeof level === 'string') {
-			const resolved = LogLevel[level.toUpperCase() as keyof typeof LogLevel] as LogLevel | undefined;
+			const levelMap: Record<string, LogLevel | undefined> = {
+				DEBUG: LogLevel.DEBUG,
+				INFO: LogLevel.INFO,
+				WARN: LogLevel.WARN,
+				ERROR: LogLevel.ERROR,
+			};
+			const resolved = levelMap[level.toUpperCase()];
 			if (resolved === undefined) {
 				console.warn(`[logger] Invalid log level: "${level}", keeping current level`);
 				return;
