@@ -1,4 +1,5 @@
 export { formatDuration, toLocalISOString } from './date.js';
+export { serializeError } from './error.js';
 export { getEnumValue } from './getEnumValue.js';
 export { HttpError, fetchWithRetry } from './http.js';
 export type { FetchRetryOptions } from './http.js';
