@@ -32,12 +32,9 @@ export const waitForElement = async <T extends HTMLElement>(
 		timeout?: number;
 		jitter?: number;
 	},
-): Promise<T[] | null> => {
+): Promise<T | null> => {
 	const root = options?.parent ?? document;
-	return poll(() => {
-		const elements = root.querySelectorAll<T>(selector);
-		return elements.length > 0 ? Array.from(elements) : null;
-	}, options);
+	return poll(() => root.querySelector<T>(selector), options);
 };
 
 export const waitForElements = async <T extends HTMLElement>(
