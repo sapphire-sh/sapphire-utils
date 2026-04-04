@@ -1,21 +1,43 @@
 import { isNonNullable } from './isNonNullable.js';
 import { sleep } from './sleep.js';
 
-export const waitForElement = async (selector: string, timeout = 10000) => {
+const poll = async <T>(
+	handler: () => T | null,
+	options?: {
+		timeout?: number;
+		jitter?: number;
+	},
+): Promise<T | null> => {
+	const { timeout = 10000, jitter = 0 } = options ?? {};
 	let elapsedTime = 0;
 	const intervalTime = 100;
 
 	for (;;) {
-		const e = document.querySelectorAll(selector);
-		if (e.length > 0) {
-			return e;
+		const result = handler();
+		if (result !== null) {
+			return result;
 		}
 		if (elapsedTime >= timeout) {
 			return null;
 		}
-		await sleep(intervalTime);
+		await sleep(intervalTime, jitter);
 		elapsedTime += intervalTime;
 	}
+};
+
+export const waitForElement = async <T extends HTMLElement>(
+	selector: string,
+	options?: {
+		parent?: ParentNode;
+		timeout?: number;
+		jitter?: number;
+	},
+): Promise<T[] | null> => {
+	const root = options?.parent ?? document;
+	return poll(() => {
+		const elements = root.querySelectorAll<T>(selector);
+		return elements.length > 0 ? Array.from(elements) : null;
+	}, options);
 };
 
 export const waitForElements = async <T extends HTMLElement>(
@@ -23,31 +45,18 @@ export const waitForElements = async <T extends HTMLElement>(
 	options?: {
 		parent?: HTMLElement;
 		timeout?: number;
+		jitter?: number;
 	},
 ): Promise<T[] | null> => {
-	const { parent, timeout = 10000 } = options ?? {};
-
-	const root = parent ?? document;
-
-	let elapsedTime = 0;
-	const intervalTime = 100;
-
-	for (;;) {
-		if (elapsedTime >= timeout) {
-			return null;
-		}
-
-		const selectors = Array.isArray(selector) ? selector : [selector];
+	const root = options?.parent ?? document;
+	const selectors = Array.isArray(selector) ? selector : [selector];
+	return poll(() => {
 		for (const selector of selectors) {
-			const elements = root.querySelectorAll(selector);
+			const elements = root.querySelectorAll<T>(selector);
 			if (elements.length > 0) {
-				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-				return Array.from(elements)
-					.map((element) => (element instanceof HTMLElement ? element : null))
-					.filter(isNonNullable) as unknown as T[];
+				return Array.from(elements).filter(isNonNullable);
 			}
-			await sleep(intervalTime);
-			elapsedTime += intervalTime;
 		}
-	}
+		return null;
+	}, options);
 };
