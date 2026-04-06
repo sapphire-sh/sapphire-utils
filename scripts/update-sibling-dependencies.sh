@@ -27,7 +27,7 @@ for dir in "$PARENT_DIR"/*/; do
       echo "$(basename "$dir"): already $LATEST ✓"
     else
       echo "$(basename "$dir"): $current → $LATEST"
-      $DRY_RUN || (cd "$dir" && npm install "$PACKAGE@$LATEST" --save-exact 2>&1 | tail -1)
+      $DRY_RUN || (cd "$dir" && npm install "$PACKAGE@$LATEST" 2>&1 | tail -1)
     fi
   fi
 done
