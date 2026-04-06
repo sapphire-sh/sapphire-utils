@@ -29,6 +29,11 @@
 			"require": "./lib/cjs/vitest.js",
 			"types": "./lib/vitest.d.ts"
 		},
+		"./browser": {
+			"import": "./lib/browser.js",
+			"require": "./lib/cjs/browser.js",
+			"types": "./lib/browser.d.ts"
+		},
 		"./node": {
 			"import": "./lib/node.js",
 			"require": "./lib/cjs/node.js",
