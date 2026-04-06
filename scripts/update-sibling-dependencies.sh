@@ -15,7 +15,11 @@ if [[ -z "$LATEST" ]]; then
 fi
 
 if [[ "$LOCAL" != "$LATEST" ]]; then
-  echo "version mismatch: local $LOCAL ≠ npm $LATEST (publish first)"
+  if [[ "$(printf '%s\n%s' "$LOCAL" "$LATEST" | sort -V | head -1)" == "$LOCAL" ]]; then
+    echo "version mismatch: local $LOCAL < npm $LATEST (pull first)"
+  else
+    echo "version mismatch: local $LOCAL > npm $LATEST (publish first)"
+  fi
   exit 1
 fi
 
