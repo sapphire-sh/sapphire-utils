@@ -16,17 +16,17 @@ echo "latest $PACKAGE: $LATEST"
 $DRY_RUN && echo "(dry run)"
 echo ""
 
-for dir in "$PARENT_DIR"/*/; do
-  [[ -f "$dir/package.json" ]] || continue
-  [[ "$(basename "$dir")" == "sapphire-utils" ]] && continue
+find "$PARENT_DIR" -name package.json -not -path '*/node_modules/*' -not -path '*/sapphire-utils/*' | while read -r pkg; do
+  dir="$(dirname "$pkg")"
+  label="${dir#$PARENT_DIR/}"
 
-  if grep -q "\"$PACKAGE\"" "$dir/package.json" 2>/dev/null; then
+  if grep -q "\"$PACKAGE\"" "$pkg" 2>/dev/null; then
     current="$(cd "$dir" && node -e "const p = require('./package.json'); console.log((p.dependencies?.['$PACKAGE'] ?? p.devDependencies?.['$PACKAGE'] ?? '').replace(/^[^0-9]*/, ''))")"
 
     if [[ "$current" == "$LATEST" ]]; then
-      echo "$(basename "$dir"): already $LATEST ✓"
+      echo "$label: already $LATEST ✓"
     else
-      echo "$(basename "$dir"): $current → $LATEST"
+      echo "$label: $current → $LATEST"
       $DRY_RUN || (cd "$dir" && npm install "$PACKAGE@$LATEST" 2>&1 | tail -1)
     fi
   fi
