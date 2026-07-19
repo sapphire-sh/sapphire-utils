@@ -7,10 +7,7 @@ export const interceptXHR = (pattern: string | RegExp, handler: (xhr: XMLHttpReq
 				return;
 			}
 
-			const matches =
-				typeof pattern === 'string'
-					? this.responseURL.includes(pattern)
-					: pattern.test(this.responseURL);
+			const matches = typeof pattern === 'string' ? this.responseURL.includes(pattern) : pattern.test(this.responseURL);
 
 			if (!matches) {
 				return;
