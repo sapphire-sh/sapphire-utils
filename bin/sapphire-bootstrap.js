@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const START_MARKER = '# @sapphire-sh/utils:start';
@@ -42,13 +42,31 @@ const writeSectioned = (outputName, content) => {
 	console.log(`wrote ${outputName}`);
 };
 
-for (const filename of readdirSync(templatesDir)) {
-	const outputName = renameMap.get(filename) ?? filename;
+const collectTemplates = (directory, prefix) => {
+	const relativePaths = [];
+
+	for (const entry of readdirSync(directory, { withFileTypes: true })) {
+		const relativePath = prefix === '' ? entry.name : join(prefix, entry.name);
+
+		if (entry.isDirectory()) {
+			relativePaths.push(...collectTemplates(join(directory, entry.name), relativePath));
+		} else {
+			relativePaths.push(relativePath);
+		}
+	}
+
+	return relativePaths;
+};
+
+for (const relativePath of collectTemplates(templatesDir, '')) {
+	const outputName = renameMap.get(relativePath) ?? relativePath;
 	if (sectioned.has(outputName)) {
-		const content = readFileSync(join(templatesDir, filename), 'utf-8');
+		const content = readFileSync(join(templatesDir, relativePath), 'utf-8');
 		writeSectioned(outputName, content);
 	} else {
-		copyFileSync(join(templatesDir, filename), join(cwd, outputName));
+		const outputPath = join(cwd, outputName);
+		mkdirSync(dirname(outputPath), { recursive: true });
+		copyFileSync(join(templatesDir, relativePath), outputPath);
 		console.log(`wrote ${outputName}`);
 	}
 }
