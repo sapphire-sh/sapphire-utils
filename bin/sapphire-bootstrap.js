@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 const START_MARKER = '# @sapphire-sh/utils:start';
 const END_MARKER = '# @sapphire-sh/utils:end';
 
+const selfPackageName = '@sapphire-sh/utils';
+const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
+
 const sectioned = new Set(['.gitignore']);
 const renameMap = new Map([
 	['editorconfig.template', '.editorconfig'],
@@ -16,6 +19,23 @@ const renameMap = new Map([
 
 const templatesDir = join(fileURLToPath(import.meta.url), '..', '..', 'templates');
 const cwd = process.cwd();
+
+const readPackageName = () => {
+	const filepath = join(cwd, 'package.json');
+
+	if (existsSync(filepath) === false) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(readFileSync(filepath, 'utf-8'));
+		return typeof parsed.name === 'string' ? parsed.name : null;
+	} catch {
+		return null;
+	}
+};
+
+const isSelf = readPackageName() === selfPackageName;
 
 const writeSectioned = (outputName, content) => {
 	const filepath = join(cwd, outputName);
@@ -60,6 +80,12 @@ const collectTemplates = (directory, prefix) => {
 
 for (const relativePath of collectTemplates(templatesDir, '')) {
 	const outputName = renameMap.get(relativePath) ?? relativePath;
+
+	if (isSelf && selfSkipped.has(outputName)) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
 	if (sectioned.has(outputName)) {
 		const content = readFileSync(join(templatesDir, relativePath), 'utf-8');
 		writeSectioned(outputName, content);
