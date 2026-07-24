@@ -9,6 +9,7 @@ jobs:
     uses: sapphire-sh/github-actions/.github/workflows/npm-publish-template.yml@main
     with:
       run_tests: true
+      runner: ubuntu-latest
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
