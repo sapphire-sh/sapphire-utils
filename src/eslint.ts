@@ -3,6 +3,7 @@ import prettier from 'eslint-config-prettier';
 import promise from 'eslint-plugin-promise';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
+import { sapphirePlugin } from './eslintRules.js';
 
 export default defineConfig(
 	eslint.configs.recommended,
@@ -10,7 +11,13 @@ export default defineConfig(
 	prettier,
 	promise.configs['flat/recommended'],
 	{
+		plugins: {
+			sapphire: sapphirePlugin,
+		},
 		rules: {
+			// Sapphire
+			'sapphire/no-control-characters': 'error',
+
 			// General
 			'arrow-body-style': ['error', 'as-needed'],
 			curly: 'error',
