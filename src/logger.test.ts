@@ -73,3 +73,61 @@ describe('logger', () => {
 		expect(output).toContain('boom');
 	});
 });
+
+describe('logger initialization from LOG_LEVEL', () => {
+	const originalEnv = process.env.LOG_LEVEL;
+
+	afterEach(() => {
+		if (originalEnv === undefined) {
+			delete process.env.LOG_LEVEL;
+		} else {
+			process.env.LOG_LEVEL = originalEnv;
+		}
+		vi.restoreAllMocks();
+	});
+
+	const loadLogger = async (level: string | undefined) => {
+		vi.resetModules();
+		if (level === undefined) {
+			delete process.env.LOG_LEVEL;
+		} else {
+			process.env.LOG_LEVEL = level;
+		}
+		return import('./logger');
+	};
+
+	it('initializes to DEBUG when LOG_LEVEL=debug', async () => {
+		const { logger } = await loadLogger('debug');
+		const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+		logger.debug('debug message');
+		expect(spy).toHaveBeenCalledOnce();
+	});
+
+	it('is case-insensitive for LOG_LEVEL=DEBUG', async () => {
+		const { logger } = await loadLogger('DEBUG');
+		const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+		logger.debug('debug message');
+		expect(spy).toHaveBeenCalledOnce();
+	});
+
+	it('defaults to INFO when LOG_LEVEL is unset', async () => {
+		const { logger } = await loadLogger(undefined);
+		const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+		logger.debug('debug message');
+		expect(spy).not.toHaveBeenCalled();
+	});
+
+	it('defaults to INFO when LOG_LEVEL is an empty string', async () => {
+		const { logger } = await loadLogger('');
+		const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+		logger.debug('debug message');
+		expect(spy).not.toHaveBeenCalled();
+	});
+
+	it('falls back to INFO on an invalid LOG_LEVEL', async () => {
+		const { logger } = await loadLogger('verbose');
+		const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+		logger.debug('debug message');
+		expect(spy).not.toHaveBeenCalled();
+	});
+});

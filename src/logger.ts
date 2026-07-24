@@ -14,7 +14,24 @@ const serializePayload = (payload: Payload): string => {
 	return json.padStart(json.length + 1);
 };
 
-let currentLevel: LogLevel = LogLevel.INFO;
+const levelMap: Record<string, LogLevel | undefined> = {
+	DEBUG: LogLevel.DEBUG,
+	INFO: LogLevel.INFO,
+	WARN: LogLevel.WARN,
+	ERROR: LogLevel.ERROR,
+};
+
+const parseLevel = (level: string): LogLevel | undefined => levelMap[level.toUpperCase()];
+
+const resolveInitialLevel = (): LogLevel => {
+	const envLevel = process.env.LOG_LEVEL;
+	if (envLevel === undefined || envLevel === '') {
+		return LogLevel.INFO;
+	}
+	return parseLevel(envLevel) ?? LogLevel.INFO;
+};
+
+let currentLevel: LogLevel = resolveInitialLevel();
 
 const log = (level: LogLevel, message: string, payload?: Payload) => {
 	if (level < currentLevel) {
@@ -44,13 +61,7 @@ export const logger = {
 	error: (message: string, payload?: Payload) => log(LogLevel.ERROR, message, payload),
 	setLevel: (level: LogLevel | string) => {
 		if (typeof level === 'string') {
-			const levelMap: Record<string, LogLevel | undefined> = {
-				DEBUG: LogLevel.DEBUG,
-				INFO: LogLevel.INFO,
-				WARN: LogLevel.WARN,
-				ERROR: LogLevel.ERROR,
-			};
-			const resolved = levelMap[level.toUpperCase()];
+			const resolved = parseLevel(level);
 			if (resolved === undefined) {
 				console.warn(`[logger] Invalid log level: "${level}", keeping current level`);
 				return;
