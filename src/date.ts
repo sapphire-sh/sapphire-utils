@@ -16,6 +16,9 @@ export const toLocalISOString = (date: Date): string => {
 };
 
 export const formatDuration = (ms: number): string => {
+	if (ms < 1000) {
+		return `${ms}ms`;
+	}
 	const totalSeconds = Math.ceil(ms / 1000);
 	const hours = Math.floor(totalSeconds / 3600);
 	const minutes = Math.floor((totalSeconds % 3600) / 60);
