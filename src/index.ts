@@ -1,6 +1,7 @@
 export { formatDuration, toLocalISOString } from './date.js';
 export { readEnv, requireEnv } from './env.js';
 export { serializeError } from './error.js';
+export { formatBytes } from './format.js';
 export { getEnumValue } from './getEnumValue.js';
 export { HttpError, fetchWithRetry } from './http.js';
 export type { FetchRetryOptions } from './http.js';
