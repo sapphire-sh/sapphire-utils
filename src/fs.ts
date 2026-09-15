@@ -1,13 +1,20 @@
 import fs from 'node:fs';
 
-export const mkdir = async (path: string): Promise<void> => {
+export const fileExists = async (path: string): Promise<boolean> => {
 	try {
 		await fs.promises.lstat(path);
+		return true;
 	} catch (error) {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-			await fs.promises.mkdir(path, { recursive: true });
-		} else {
-			throw error;
+			return false;
 		}
+		throw error;
 	}
+};
+
+export const mkdir = async (path: string): Promise<void> => {
+	if (await fileExists(path)) {
+		return;
+	}
+	await fs.promises.mkdir(path, { recursive: true });
 };
