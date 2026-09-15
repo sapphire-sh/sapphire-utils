@@ -35,6 +35,11 @@
 			"require": "./lib/cjs/vitest.js",
 			"types": "./lib/vitest.d.ts"
 		},
+		"./vitest/next": {
+			"import": "./lib/vitestNext.js",
+			"require": "./lib/cjs/vitestNext.js",
+			"types": "./lib/vitestNext.d.ts"
+		},
 		"./browser": {
 			"import": "./lib/browser.js",
 			"require": "./lib/cjs/browser.js",
