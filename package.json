@@ -19,6 +19,11 @@
 			"require": "./lib/cjs/eslint.js",
 			"types": "./lib/eslint.d.ts"
 		},
+		"./eslint/next": {
+			"import": "./lib/eslintNext.js",
+			"require": "./lib/cjs/eslintNext.js",
+			"types": "./lib/eslintNext.d.ts"
+		},
 		"./prettier": {
 			"import": "./lib/prettier.js",
 			"require": "./lib/cjs/prettier.js",
@@ -76,6 +81,7 @@
 	"peerDependencies": {
 		"@eslint/js": ">=9.0.0",
 		"eslint": ">=9.0.0",
+		"eslint-config-next": ">=16.0.0",
 		"eslint-config-prettier": ">=9.0.0",
 		"eslint-plugin-promise": ">=7.0.0",
 		"prettier": ">=3.0.0",
@@ -88,6 +94,9 @@
 			"optional": true
 		},
 		"eslint": {
+			"optional": true
+		},
+		"eslint-config-next": {
 			"optional": true
 		},
 		"eslint-config-prettier": {
@@ -108,6 +117,7 @@
 		"@types/node": "^25.5.0",
 		"@vitest/coverage-v8": "^4.1.1",
 		"eslint": "^9.24.0",
+		"eslint-config-next": "^16.3.5",
 		"eslint-config-prettier": "^10.1.2",
 		"eslint-plugin-promise": "^7.2.1",
 		"prettier": "^3.8.1",
