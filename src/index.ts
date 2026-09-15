@@ -11,7 +11,7 @@ export type { JsonObject, JsonValue } from './json.js';
 export { LogLevel, logger } from './logger.js';
 export type { LogEntry, LogSink } from './logger.js';
 export { clamp } from './math.js';
-export { notifyMattermost, notifySlack } from './notify.js';
+export { notifyMattermost, notifySlack, pingHealthchecks } from './notify.js';
 export { Queue } from './queue.js';
 export { retry } from './retry.js';
 export type { RetryOptions } from './retry.js';

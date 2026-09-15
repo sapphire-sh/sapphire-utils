@@ -31,6 +31,22 @@ export const notifySlack = async (url: string, text: string): Promise<void> => {
 	}
 };
 
+export const pingHealthchecks = async (url: string, timeoutMs = 4096): Promise<void> => {
+	try {
+		const resp = await fetch(url, {
+			method: 'GET',
+			signal: AbortSignal.timeout(timeoutMs),
+		});
+		if (!resp.ok) {
+			logger.warn('[pingHealthchecks] ping failed', { status: resp.status });
+		}
+	} catch (error) {
+		logger.warn('[pingHealthchecks] ping threw', {
+			message: error instanceof Error ? error.message : String(error),
+		});
+	}
+};
+
 export const notifyMattermost = async (
 	baseUrl: string,
 	token: string,

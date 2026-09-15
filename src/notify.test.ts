@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { notifyMattermost, notifySlack } from './notify';
+import { logger } from './logger';
+import { notifyMattermost, notifySlack, pingHealthchecks } from './notify';
 import { sleep } from './sleep';
 
 vi.mock('./sleep.js', () => ({
@@ -111,5 +112,49 @@ describe('notifyMattermost', () => {
 		await expect(notifyMattermost(baseUrl, token, channelId, 'hello')).rejects.toThrow(
 			'Mattermost post failed: HTTP 403',
 		);
+	});
+});
+
+describe('pingHealthchecks', () => {
+	const pingUrl = 'https://hc.example.com/ping/abc123';
+
+	beforeEach(() => {
+		vi.stubGlobal('fetch', vi.fn());
+		vi.spyOn(logger, 'warn').mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	it('sends a GET request with a timeout signal', async () => {
+		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
+
+		await expect(pingHealthchecks(pingUrl)).resolves.toBeUndefined();
+
+		expect(fetch).toHaveBeenCalledWith(
+			pingUrl,
+			expect.objectContaining({ method: 'GET', signal: expect.any(AbortSignal) }),
+		);
+		expect(logger.warn).not.toHaveBeenCalled();
+	});
+
+	it('warns without throwing when the response is not ok', async () => {
+		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 503 }));
+
+		await expect(pingHealthchecks(pingUrl)).resolves.toBeUndefined();
+
+		expect(logger.warn).toHaveBeenCalledTimes(1);
+		expect(logger.warn).toHaveBeenCalledWith(expect.any(String), { status: 503 });
+	});
+
+	it('warns without throwing when the request fails', async () => {
+		vi.mocked(fetch).mockRejectedValue(new Error('network down'));
+
+		await expect(pingHealthchecks(pingUrl)).resolves.toBeUndefined();
+
+		expect(logger.warn).toHaveBeenCalledTimes(1);
+		expect(logger.warn).toHaveBeenCalledWith(expect.any(String), { message: 'network down' });
 	});
 });
