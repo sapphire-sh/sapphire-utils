@@ -1,4 +1,4 @@
-export { formatDuration, toLocalISOString } from './date.js';
+export { formatDate, formatDuration, toLocalISOString } from './date.js';
 export { readEnv, requireEnv } from './env.js';
 export { serializeError } from './error.js';
 export { formatBytes } from './format.js';
