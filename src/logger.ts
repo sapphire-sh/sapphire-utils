@@ -1,3 +1,5 @@
+import { readEnv } from './env.js';
+
 export enum LogLevel {
 	DEBUG = 1,
 	INFO,
@@ -24,8 +26,8 @@ const levelMap: Record<string, LogLevel | undefined> = {
 const parseLevel = (level: string): LogLevel | undefined => levelMap[level.toUpperCase()];
 
 const resolveInitialLevel = (): LogLevel => {
-	const envLevel = process.env.LOG_LEVEL;
-	if (envLevel === undefined || envLevel === '') {
+	const envLevel = readEnv('LOG_LEVEL');
+	if (envLevel === undefined) {
 		return LogLevel.INFO;
 	}
 	return parseLevel(envLevel) ?? LogLevel.INFO;
