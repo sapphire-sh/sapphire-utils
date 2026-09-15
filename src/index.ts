@@ -12,6 +12,8 @@ export { notifyMattermost, notifySlack } from './notify.js';
 export { Queue } from './queue.js';
 export { retry } from './retry.js';
 export type { RetryOptions } from './retry.js';
+export { createSerialLimiter } from './serialLimiter.js';
+export type { SerialLimiter } from './serialLimiter.js';
 export { chunkLines, createSlackLogBatcher } from './slackLogBatcher.js';
 export type { SlackLogBatcher, SlackLogBatcherOptions } from './slackLogBatcher.js';
 export { sleep } from './sleep.js';
