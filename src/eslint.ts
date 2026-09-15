@@ -40,6 +40,7 @@ export default defineConfig(
 			'no-restricted-imports': [
 				'error',
 				{ name: 'assert', message: 'Use `node:assert` instead.' },
+				{ name: 'axios', message: 'Use fetch or fetchWithRetry from @sapphire-sh/utils instead.' },
 				{ name: 'buffer', message: 'Use `node:buffer` instead.' },
 				{ name: 'child_process', message: 'Use `node:child_process` instead.' },
 				{ name: 'cluster', message: 'Use `node:cluster` instead.' },
