@@ -54,3 +54,9 @@ export const fetchWithRetry = async (
 		},
 	);
 };
+
+export const fetchJson = async <T>(url: string, init?: RequestInit, retryOptions?: FetchRetryOptions): Promise<T> => {
+	const resp = await fetchWithRetry(url, init, retryOptions);
+	const parsed: T = await resp.json();
+	return parsed;
+};

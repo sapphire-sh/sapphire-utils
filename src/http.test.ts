@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, fetchWithRetry } from './http';
+import { HttpError, fetchJson, fetchWithRetry } from './http';
 
 const url = 'https://example.test/resource';
 const fastOptions = { baseDelayMs: 1, jitterMs: 0 };
@@ -79,5 +79,29 @@ describe('fetchWithRetry', () => {
 		await vi.advanceTimersByTimeAsync(1);
 		await expect(promise).resolves.toMatchObject({ status: 200 });
 		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe('fetchJson', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('parses the response body', async () => {
+		mockFetch().mockResolvedValue(Response.json({ name: 'sapphire', count: 2 }));
+
+		await expect(fetchJson(url, undefined, fastOptions)).resolves.toEqual({ name: 'sapphire', count: 2 });
+	});
+
+	it('throws an HttpError when the response is not ok', async () => {
+		mockFetch().mockResolvedValue(new Response(null, { status: 404, statusText: 'Not Found' }));
+
+		await expect(fetchJson(url, undefined, fastOptions)).rejects.toThrow(HttpError);
+	});
+
+	it('throws when the body is not JSON', async () => {
+		mockFetch().mockResolvedValue(new Response('not json', { status: 200 }));
+
+		await expect(fetchJson(url, undefined, fastOptions)).rejects.toThrow(SyntaxError);
 	});
 });

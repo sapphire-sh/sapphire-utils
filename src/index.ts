@@ -3,7 +3,7 @@ export { readEnv, requireEnv } from './env.js';
 export { serializeError } from './error.js';
 export { formatBytes } from './format.js';
 export { getEnumValue } from './getEnumValue.js';
-export { HttpError, fetchWithRetry } from './http.js';
+export { HttpError, fetchJson, fetchWithRetry } from './http.js';
 export type { FetchRetryOptions } from './http.js';
 export { isNonNullable } from './isNonNullable.js';
 export { getArray, getBoolean, getNumber, getObject, getString, isJsonObject, parseJson } from './json.js';
