@@ -1,4 +1,10 @@
 export const readEnv = (name: string): string | undefined => {
+	// The root entry re-exports modules that read env at load time, so a browser
+	// bundle without `process` must get undefined rather than a ReferenceError.
+	if (typeof process === 'undefined') {
+		return undefined;
+	}
+
 	const value = process.env[name];
 	if (value === undefined || value === '') {
 		return undefined;

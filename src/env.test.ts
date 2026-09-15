@@ -22,6 +22,17 @@ describe('readEnv', () => {
 		process.env[variableName] = 'value';
 		expect(readEnv(variableName)).toBe('value');
 	});
+
+	it('returns undefined when process is not defined', () => {
+		const originalProcess = globalThis.process;
+		Reflect.deleteProperty(globalThis, 'process');
+
+		try {
+			expect(readEnv(variableName)).toBeUndefined();
+		} finally {
+			globalThis.process = originalProcess;
+		}
+	});
 });
 
 describe('requireEnv', () => {

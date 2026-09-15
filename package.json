@@ -3,6 +3,7 @@
 	"version": "1.82.0",
 	"description": "@sapphire-sh/utils",
 	"type": "module",
+	"sideEffects": false,
 	"main": "./lib/index.js",
 	"types": "./lib/index.d.ts",
 	"bin": {

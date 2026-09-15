@@ -240,4 +240,23 @@ describe('logger initialization from LOG_LEVEL', () => {
 		logger.debug('debug message');
 		expect(spy).not.toHaveBeenCalled();
 	});
+
+	it('loads at INFO when process is not defined', async () => {
+		process.env.LOG_LEVEL = 'debug';
+		vi.resetModules();
+
+		const originalProcess = globalThis.process;
+		Reflect.deleteProperty(globalThis, 'process');
+
+		let loaded;
+		try {
+			loaded = await import('./logger');
+		} finally {
+			globalThis.process = originalProcess;
+		}
+
+		const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+		loaded.logger.debug('debug message');
+		expect(spy).not.toHaveBeenCalled();
+	});
 });
