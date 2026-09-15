@@ -1,4 +1,5 @@
 import type { ESLint, Rule } from 'eslint';
+import type { Node } from 'estree';
 
 // C0 control characters and DEL, excluding tab (U+0009), LF (U+000A), and CR (U+000D).
 // Matching control characters is the whole point of this rule, so no-control-regex is expected here.
@@ -39,8 +40,44 @@ export const noControlCharacters: Rule.RuleModule = {
 	},
 };
 
+const isProcessEnv = (node: Node): boolean =>
+	node.type === 'MemberExpression' &&
+	!node.computed &&
+	node.object.type === 'Identifier' &&
+	node.object.name === 'process' &&
+	node.property.type === 'Identifier' &&
+	node.property.name === 'env';
+
+export const preferReadEnv: Rule.RuleModule = {
+	meta: {
+		type: 'problem',
+		docs: {
+			description: 'Disallow fallback operators on process.env values, which keep an empty string as a value',
+		},
+		schema: [],
+		messages: {
+			preferReadEnv:
+				'Use readEnv() from @sapphire-sh/utils instead of a fallback operator on process.env, which does not treat an empty string as unset.',
+		},
+	},
+	create(context) {
+		return {
+			LogicalExpression(node) {
+				if (node.operator !== '??' && node.operator !== '||') {
+					return;
+				}
+				if (node.left.type !== 'MemberExpression' || !isProcessEnv(node.left.object)) {
+					return;
+				}
+				context.report({ node, messageId: 'preferReadEnv' });
+			},
+		};
+	},
+};
+
 export const sapphirePlugin: ESLint.Plugin = {
 	rules: {
 		'no-control-characters': noControlCharacters,
+		'prefer-read-env': preferReadEnv,
 	},
 };

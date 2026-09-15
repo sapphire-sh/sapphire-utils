@@ -1,6 +1,6 @@
-import { Linter } from 'eslint';
+import { Linter, RuleTester } from 'eslint';
 import { describe, expect, it } from 'vitest';
-import { sapphirePlugin } from './eslintRules';
+import { preferReadEnv, sapphirePlugin } from './eslintRules';
 
 const linter = new Linter();
 
@@ -54,5 +54,51 @@ describe('no-control-characters', () => {
 	it('allows ordinary source', () => {
 		const messages = lint('const value = 1;\n');
 		expect(messages).toHaveLength(0);
+	});
+});
+
+const ruleTester = new RuleTester({
+	languageOptions: {
+		ecmaVersion: 2024,
+		sourceType: 'module',
+	},
+});
+
+describe('prefer-read-env', () => {
+	it('reports fallback operators on process.env', () => {
+		ruleTester.run('prefer-read-env', preferReadEnv, {
+			valid: [],
+			invalid: [
+				{
+					code: "const value = process.env.LOG_LEVEL ?? 'info';",
+					errors: [{ messageId: 'preferReadEnv' }],
+				},
+				{
+					code: "const value = process.env.LOG_LEVEL || 'info';",
+					errors: [{ messageId: 'preferReadEnv' }],
+				},
+				{
+					code: "const value = process.env['LOG_LEVEL'] ?? 'info';",
+					errors: [{ messageId: 'preferReadEnv' }],
+				},
+				{
+					code: "const value = process.env[name] ?? 'info';",
+					errors: [{ messageId: 'preferReadEnv' }],
+				},
+			],
+		});
+	});
+
+	it('allows readEnv and explicit comparisons', () => {
+		ruleTester.run('prefer-read-env', preferReadEnv, {
+			valid: [
+				"const value = readEnv('LOG_LEVEL') ?? 'info';",
+				"const value = process.env.LOG_LEVEL === undefined ? 'info' : process.env.LOG_LEVEL;",
+				"const raw = process.env[name];\nconst value = raw === undefined || raw === '' ? undefined : raw;",
+				"const value = config.env.LOG_LEVEL ?? 'info';",
+				"const value = other ?? 'info';",
+			],
+			invalid: [],
+		});
 	});
 });

@@ -17,6 +17,7 @@ export default defineConfig(
 		rules: {
 			// Sapphire
 			'sapphire/no-control-characters': 'error',
+			'sapphire/prefer-read-env': 'error',
 
 			// General
 			'arrow-body-style': ['error', 'as-needed'],
