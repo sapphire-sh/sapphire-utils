@@ -84,6 +84,7 @@
 		"eslint-config-next": ">=16.0.0",
 		"eslint-config-prettier": ">=9.0.0",
 		"eslint-plugin-promise": ">=7.0.0",
+		"next": ">=16.0.0",
 		"prettier": ">=3.0.0",
 		"prettier-plugin-organize-imports": ">=4.0.0",
 		"typescript-eslint": ">=8.0.0",
@@ -103,6 +104,9 @@
 			"optional": true
 		},
 		"eslint-plugin-promise": {
+			"optional": true
+		},
+		"next": {
 			"optional": true
 		},
 		"typescript-eslint": {
