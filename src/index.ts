@@ -5,6 +5,8 @@ export { getEnumValue } from './getEnumValue.js';
 export { HttpError, fetchWithRetry } from './http.js';
 export type { FetchRetryOptions } from './http.js';
 export { isNonNullable } from './isNonNullable.js';
+export { getArray, getBoolean, getNumber, getObject, getString, isJsonObject, parseJson } from './json.js';
+export type { JsonObject, JsonValue } from './json.js';
 export { LogLevel, logger } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
 export { Queue } from './queue.js';
