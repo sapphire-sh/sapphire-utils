@@ -142,6 +142,17 @@ export default defineConfig(
 		},
 	},
 	{
+		// Test doubles implement only part of an interface, and some libraries return
+		// `unknown`, so test files narrow with `as` where production code must not.
+		files: ['**/*.test.ts', '**/*.test.tsx'],
+		rules: {
+			'@typescript-eslint/consistent-type-assertions': [
+				'error',
+				{ assertionStyle: 'as', objectLiteralTypeAssertions: 'allow', arrayLiteralTypeAssertions: 'allow' },
+			],
+		},
+	},
+	{
 		ignores: ['*.config.js', '**/*.json', 'coverage/', 'dist/', 'lib/', 'node_modules/'],
 	},
 );
