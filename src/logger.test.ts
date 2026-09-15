@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LogSink } from './logger';
 import { LogLevel, logger } from './logger';
 
 describe('logger', () => {
@@ -71,6 +72,115 @@ describe('logger', () => {
 		logger.error('with error', err);
 		const output = String(vi.mocked(console.error).mock.calls[0][0]);
 		expect(output).toContain('boom');
+	});
+
+	it('serializes a string payload', () => {
+		logger.info('with string', 'text');
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('"text"');
+	});
+
+	it('serializes a number payload', () => {
+		logger.info('with number', 42);
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('42');
+	});
+
+	it('serializes an array payload', () => {
+		logger.info('with array', [1, 'two']);
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('[1,"two"]');
+	});
+});
+
+describe('logger sinks', () => {
+	const removers: (() => void)[] = [];
+
+	const addSink = (sink: LogSink) => {
+		const remove = logger.addSink(sink);
+		removers.push(remove);
+		return remove;
+	};
+
+	beforeEach(() => {
+		vi.spyOn(console, 'log').mockImplementation(() => {});
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.spyOn(console, 'debug').mockImplementation(() => {});
+		logger.setLevel(LogLevel.INFO);
+	});
+
+	afterEach(() => {
+		while (removers.length > 0) {
+			removers.pop()?.();
+		}
+		vi.restoreAllMocks();
+	});
+
+	it('passes the entry to a registered sink', () => {
+		const sink = vi.fn();
+		addSink(sink);
+
+		logger.warn('to sink', { key: 'value' });
+
+		expect(sink).toHaveBeenCalledTimes(1);
+		expect(sink).toHaveBeenCalledWith({
+			level: LogLevel.WARN,
+			message: 'to sink',
+			payload: { key: 'value' },
+			timestamp: expect.any(Date),
+		});
+	});
+
+	it('stops calling a sink once its remover is called', () => {
+		const sink = vi.fn();
+		const remove = addSink(sink);
+
+		logger.info('first');
+		remove();
+		logger.info('second');
+
+		expect(sink).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not call sinks for entries below the current level', () => {
+		const sink = vi.fn();
+		addSink(sink);
+		logger.setLevel(LogLevel.WARN);
+
+		logger.info('suppressed');
+
+		expect(sink).not.toHaveBeenCalled();
+	});
+
+	it('calls sinks in registration order after the console output', () => {
+		const order: string[] = [];
+		vi.mocked(console.log).mockImplementation(() => {
+			order.push('console');
+		});
+		addSink(() => {
+			order.push('first');
+		});
+		addSink(() => {
+			order.push('second');
+		});
+
+		logger.info('ordered');
+
+		expect(order).toEqual(['console', 'first', 'second']);
+	});
+
+	it('keeps the remaining sinks running when one throws', () => {
+		const failing = vi.fn(() => {
+			throw new Error('sink boom');
+		});
+		const following = vi.fn();
+		addSink(failing);
+		addSink(following);
+
+		logger.info('with a failing sink');
+
+		expect(failing).toHaveBeenCalledTimes(1);
+		expect(following).toHaveBeenCalledTimes(1);
+		expect(console.log).toHaveBeenCalledTimes(1);
+		expect(console.error).toHaveBeenCalledWith('[logger] sink failed', expect.any(Error));
 	});
 });
 

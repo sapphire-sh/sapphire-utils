@@ -7,7 +7,18 @@ export enum LogLevel {
 	ERROR,
 }
 
-type Payload = Record<string, unknown> | Error;
+type Payload = unknown;
+
+export interface LogEntry {
+	level: LogLevel;
+	message: string;
+	payload?: unknown;
+	timestamp: Date;
+}
+
+export type LogSink = (entry: LogEntry) => void;
+
+const sinks: LogSink[] = [];
 
 const serializePayload = (payload: Payload): string => {
 	const json = JSON.stringify(
@@ -40,8 +51,8 @@ const log = (level: LogLevel, message: string, payload?: Payload) => {
 		return;
 	}
 
-	const ts = new Date().toISOString();
-	const prefix = `[${ts}] [${LogLevel[level].toUpperCase()}]`;
+	const timestamp = new Date();
+	const prefix = `[${timestamp.toISOString()}] [${LogLevel[level].toUpperCase()}]`;
 	const payloadStr = payload === undefined ? '' : serializePayload(payload);
 	const output = `${prefix} ${message}${payloadStr}`;
 
@@ -54,6 +65,14 @@ const log = (level: LogLevel, message: string, payload?: Payload) => {
 	} else {
 		console.log(output);
 	}
+
+	for (const sink of sinks) {
+		try {
+			sink({ level, message, payload, timestamp });
+		} catch (error) {
+			console.error('[logger] sink failed', error);
+		}
+	}
 };
 
 export const logger = {
@@ -61,6 +80,15 @@ export const logger = {
 	info: (message: string, payload?: Payload) => log(LogLevel.INFO, message, payload),
 	warn: (message: string, payload?: Payload) => log(LogLevel.WARN, message, payload),
 	error: (message: string, payload?: Payload) => log(LogLevel.ERROR, message, payload),
+	addSink: (sink: LogSink): (() => void) => {
+		sinks.push(sink);
+		return () => {
+			const index = sinks.indexOf(sink);
+			if (index !== -1) {
+				sinks.splice(index, 1);
+			}
+		};
+	},
 	setLevel: (level: LogLevel | string) => {
 		if (typeof level === 'string') {
 			const resolved = parseLevel(level);

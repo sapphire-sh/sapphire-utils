@@ -9,6 +9,7 @@ export { isNonNullable } from './isNonNullable.js';
 export { getArray, getBoolean, getNumber, getObject, getString, isJsonObject, parseJson } from './json.js';
 export type { JsonObject, JsonValue } from './json.js';
 export { LogLevel, logger } from './logger.js';
+export type { LogEntry, LogSink } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
 export { Queue } from './queue.js';
 export { retry } from './retry.js';
