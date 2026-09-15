@@ -88,6 +88,20 @@ describe('logger', () => {
 		logger.info('with array', [1, 'two']);
 		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('[1,"two"]');
 	});
+
+	it('renders a function payload as its type instead of throwing', () => {
+		expect(() => {
+			logger.info('with function', () => 'value');
+		}).not.toThrow();
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('"[function]"');
+	});
+
+	it('renders a symbol payload as its type instead of throwing', () => {
+		expect(() => {
+			logger.info('with symbol', Symbol('marker'));
+		}).not.toThrow();
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('"[symbol]"');
+	});
 });
 
 describe('logger sinks', () => {

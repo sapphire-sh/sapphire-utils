@@ -20,10 +20,15 @@ export type LogSink = (entry: LogEntry) => void;
 
 const sinks: LogSink[] = [];
 
+// JSON.stringify is typed as returning string, but returns undefined for values it cannot
+// serialize, such as functions and symbols.
+const stringify = (value: unknown): string | undefined => JSON.stringify(value);
+
 const serializePayload = (payload: Payload): string => {
-	const json = JSON.stringify(
+	const serialized = stringify(
 		payload instanceof Error ? { error: payload.message, name: payload.name, stack: payload.stack } : payload,
 	);
+	const json = serialized ?? `"[${typeof payload}]"`;
 	return json.padStart(json.length + 1);
 };
 
