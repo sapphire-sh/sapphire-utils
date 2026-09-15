@@ -1,9 +1,10 @@
-import { sleep } from './sleep.js';
+import { retry } from './retry.js';
 
 export class HttpError extends Error {
 	public constructor(
 		public readonly status: number,
 		statusText: string,
+		public readonly retryAfterMs?: number,
 	) {
 		super(`HTTP ${status} ${statusText}`);
 	}
@@ -16,6 +17,14 @@ export interface FetchRetryOptions {
 	timeoutMs?: number;
 }
 
+const parseRetryAfterMs = (response: Response): number | undefined => {
+	const header = response.headers.get('retry-after');
+	if (header === null || header === '') {
+		return undefined;
+	}
+	return Number.parseInt(header, 10) * 1000;
+};
+
 export const fetchWithRetry = async (
 	url: string,
 	init?: RequestInit,
@@ -23,30 +32,25 @@ export const fetchWithRetry = async (
 ): Promise<Response> => {
 	const { maxRetries = 3, baseDelayMs = 1000, jitterMs = 500, timeoutMs = 30000 } = retryOptions ?? {};
 
-	for (let attempt = 0; attempt <= maxRetries; attempt++) {
-		const resp = await fetch(url, {
-			signal: AbortSignal.timeout(timeoutMs),
-			...init,
-		});
+	return retry(
+		async () => {
+			const resp = await fetch(url, {
+				signal: AbortSignal.timeout(timeoutMs),
+				...init,
+			});
 
-		if (resp.ok) {
-			return resp;
-		}
+			if (resp.ok) {
+				return resp;
+			}
 
-		const error = new HttpError(resp.status, resp.statusText);
-		const isTransient = resp.status === 429 || resp.status >= 500;
-
-		if (!isTransient || attempt === maxRetries) {
-			throw error;
-		}
-
-		const retryAfterHeader = resp.headers.get('retry-after');
-		const delay =
-			retryAfterHeader !== null && retryAfterHeader !== ''
-				? Number.parseInt(retryAfterHeader, 10) * 1000
-				: baseDelayMs * 2 ** attempt;
-		await sleep(delay, jitterMs);
-	}
-
-	throw new Error('unreachable');
+			throw new HttpError(resp.status, resp.statusText, parseRetryAfterMs(resp));
+		},
+		{
+			maxAttempts: maxRetries + 1,
+			baseDelayMs,
+			jitterMs,
+			isRetryable: (error) => error instanceof HttpError && (error.status === 429 || error.status >= 500),
+			delayMs: (error) => (error instanceof HttpError ? error.retryAfterMs : undefined),
+		},
+	);
 };

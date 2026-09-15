@@ -8,6 +8,8 @@ export { isNonNullable } from './isNonNullable.js';
 export { LogLevel, logger } from './logger.js';
 export { notifyMattermost, notifySlack } from './notify.js';
 export { Queue } from './queue.js';
+export { retry } from './retry.js';
+export type { RetryOptions } from './retry.js';
 export { sleep } from './sleep.js';
 export { escapeHtml } from './string.js';
 export { throttle } from './throttle.js';
