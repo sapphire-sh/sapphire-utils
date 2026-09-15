@@ -1,19 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fileExists, mkdir } from './fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fileExists, mkdir, readJson, writeJson } from './fs';
 
 const { lstatMock, mkdirMock } = vi.hoisted(() => ({
 	lstatMock: vi.fn(),
 	mkdirMock: vi.fn(),
 }));
 
-vi.mock('node:fs', () => ({
-	default: {
-		promises: {
-			lstat: lstatMock,
-			mkdir: mkdirMock,
+// lstat and mkdir are mocked so their error branches can be driven directly;
+// the remaining fs.promises members stay real so the JSON helpers hit the disk.
+vi.mock('node:fs', async () => {
+	const promises = await import('node:fs/promises');
+	return {
+		default: {
+			promises: {
+				...promises,
+				lstat: lstatMock,
+				mkdir: mkdirMock,
+			},
 		},
-	},
-}));
+	};
+});
 
 const path = '/tmp/sapphire-utils-test';
 
@@ -74,5 +83,41 @@ describe('mkdir', () => {
 
 		await expect(mkdir(path)).rejects.toBe(permissionError);
 		expect(mkdirMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('readJson and writeJson', () => {
+	let directory = '';
+
+	beforeAll(async () => {
+		directory = await mkdtemp(join(tmpdir(), 'sapphire-utils-'));
+	});
+
+	afterAll(async () => {
+		await rm(directory, { recursive: true, force: true });
+	});
+
+	it('round trips a value through a file', async () => {
+		const filePath = join(directory, 'round-trip.json');
+		const data = { name: 'sapphire', tags: ['a', 'b'], nested: { count: 2 } };
+
+		await writeJson(filePath, data);
+
+		await expect(readJson(filePath)).resolves.toEqual(data);
+	});
+
+	it('writes two-space indentation and a trailing newline', async () => {
+		const filePath = join(directory, 'formatted.json');
+
+		await writeJson(filePath, { a: 1, b: [2] });
+
+		await expect(readFile(filePath, 'utf-8')).resolves.toBe('{\n  "a": 1,\n  "b": [\n    2\n  ]\n}\n');
+	});
+
+	it('rejects when the file holds invalid JSON', async () => {
+		const filePath = join(directory, 'invalid.json');
+		await writeFile(filePath, '{ not json');
+
+		await expect(readJson(filePath)).rejects.toThrow();
 	});
 });
