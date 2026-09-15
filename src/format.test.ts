@@ -18,8 +18,8 @@ describe('formatBytes', () => {
 		expect(formatBytes(1536)).toBe('1.5 KB');
 	});
 
-	it('keeps the kilobyte unit just below the megabyte boundary', () => {
-		expect(formatBytes(1024 * 1024 - 1)).toBe('1024.0 KB');
+	it('steps up to megabytes when rounding reaches the kilobyte ceiling', () => {
+		expect(formatBytes(1024 * 1024 - 1)).toBe('1.0 MB');
 	});
 
 	it('steps up to megabytes at the boundary', () => {
@@ -34,8 +34,16 @@ describe('formatBytes', () => {
 		expect(formatBytes(1024 ** 3)).toBe('1.0 GB');
 	});
 
+	it('steps up to gigabytes when rounding reaches the megabyte ceiling', () => {
+		expect(formatBytes(1024 ** 3 - 1)).toBe('1.0 GB');
+	});
+
 	it('steps up to terabytes at the boundary', () => {
 		expect(formatBytes(1024 ** 4)).toBe('1.0 TB');
+	});
+
+	it('steps up to terabytes when rounding reaches the gigabyte ceiling', () => {
+		expect(formatBytes(1024 ** 4 - 1)).toBe('1.0 TB');
 	});
 
 	it('stays in terabytes above the terabyte range', () => {
