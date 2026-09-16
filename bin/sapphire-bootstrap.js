@@ -10,6 +10,9 @@ const END_MARKER = '# @sapphire-sh/utils:end';
 const selfPackageName = '@sapphire-sh/utils';
 const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 
+// Templates a consuming repo edits with its own values, so bootstrap only seeds them once.
+const preserved = new Set([join('.github', 'workflows', 'utils-update.yml')]);
+
 const sectioned = new Set(['.gitignore']);
 const renameMap = new Map([
 	['editorconfig.template', '.editorconfig'],
@@ -80,8 +83,14 @@ const collectTemplates = (directory, prefix) => {
 
 for (const relativePath of collectTemplates(templatesDir, '')) {
 	const outputName = renameMap.get(relativePath) ?? relativePath;
+	const outputPath = join(cwd, outputName);
 
 	if (isSelf && selfSkipped.has(outputName)) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
+	if (preserved.has(outputName) && existsSync(outputPath)) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}
@@ -90,7 +99,6 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 		const content = readFileSync(join(templatesDir, relativePath), 'utf-8');
 		writeSectioned(outputName, content);
 	} else {
-		const outputPath = join(cwd, outputName);
 		mkdirSync(dirname(outputPath), { recursive: true });
 		copyFileSync(join(templatesDir, relativePath), outputPath);
 		console.log(`wrote ${outputName}`);
