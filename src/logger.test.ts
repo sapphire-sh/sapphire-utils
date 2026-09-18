@@ -139,7 +139,7 @@ describe('logger sinks', () => {
 			level: LogLevel.WARN,
 			message: 'to sink',
 			payload: { key: 'value' },
-			timestamp: expect.any(Date),
+			timestamp: expect.any(Temporal.Instant),
 		});
 	});
 

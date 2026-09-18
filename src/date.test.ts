@@ -1,31 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDuration } from './date';
+import { formatDate, formatDuration, toLocalISOString } from './date';
 
 describe('formatDate', () => {
 	it('uses the given timezone for an instant before UTC midnight', () => {
-		const date = new Date('2026-01-01T23:30:00Z');
+		const instant = Temporal.Instant.from('2026-01-01T23:30:00Z');
 
-		expect(formatDate(date, 'UTC')).toBe('2026-01-01');
-		expect(formatDate(date, 'Asia/Tokyo')).toBe('2026-01-02');
+		expect(formatDate(instant, 'UTC')).toBe('2026-01-01');
+		expect(formatDate(instant, 'Asia/Tokyo')).toBe('2026-01-02');
 	});
 
 	it('uses the given timezone for an instant just after UTC midnight', () => {
-		const date = new Date('2026-01-01T00:30:00Z');
+		const instant = Temporal.Instant.from('2026-01-01T00:30:00Z');
 
-		expect(formatDate(date, 'UTC')).toBe('2026-01-01');
-		expect(formatDate(date, 'America/Los_Angeles')).toBe('2025-12-31');
+		expect(formatDate(instant, 'UTC')).toBe('2026-01-01');
+		expect(formatDate(instant, 'America/Los_Angeles')).toBe('2025-12-31');
 	});
 
 	it('pads single-digit months and days', () => {
-		expect(formatDate(new Date('2026-03-04T12:00:00Z'), 'UTC')).toBe('2026-03-04');
+		expect(formatDate(Temporal.Instant.from('2026-03-04T12:00:00Z'), 'UTC')).toBe('2026-03-04');
 	});
 
 	it('falls back to the local timezone when none is given', () => {
-		const date = new Date('2026-03-04T12:00:00Z');
-		const month = `${date.getMonth() + 1}`.padStart(2, '0');
-		const day = `${date.getDate()}`.padStart(2, '0');
+		const instant = Temporal.Instant.from('2026-03-04T12:00:00Z');
+		const local = instant.toZonedDateTimeISO(Temporal.Now.timeZoneId());
 
-		expect(formatDate(date)).toBe(`${date.getFullYear()}-${month}-${day}`);
+		expect(formatDate(instant)).toBe(local.toPlainDate().toString());
+	});
+});
+
+describe('toLocalISOString', () => {
+	it('renders the local wall time with millisecond precision and the local offset', () => {
+		const instant = Temporal.Instant.from('2026-03-04T12:00:00.007Z');
+		const local = instant.toZonedDateTimeISO(Temporal.Now.timeZoneId());
+
+		expect(toLocalISOString(instant)).toBe(
+			`${local.toPlainDateTime().toString({ smallestUnit: 'millisecond' })}${local.offset}`,
+		);
 	});
 });
 

@@ -2,7 +2,7 @@ export const throttle = <T, R>(fn: (...args: T[]) => R, interval: number) => {
 	let timestamp = 0;
 
 	return (...args: T[]): R | undefined => {
-		const now = Date.now();
+		const now = Temporal.Now.instant().epochMilliseconds;
 		if (now - timestamp < interval) {
 			return;
 		}

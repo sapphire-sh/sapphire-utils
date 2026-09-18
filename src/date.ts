@@ -1,22 +1,13 @@
-export const toLocalISOString = (date: Date): string => {
-	const year = date.getFullYear();
-	const month = `${date.getMonth() + 1}`.padStart(2, '0');
-	const day = `${date.getDate()}`.padStart(2, '0');
-	const hours = `${date.getHours()}`.padStart(2, '0');
-	const minutes = `${date.getMinutes()}`.padStart(2, '0');
-	const seconds = `${date.getSeconds()}`.padStart(2, '0');
-	const ms = `${date.getMilliseconds()}`.padStart(3, '0');
+export const toLocalISOString = (instant: Temporal.Instant): string =>
+	instant
+		.toZonedDateTimeISO(Temporal.Now.timeZoneId())
+		.toString({ smallestUnit: 'millisecond', timeZoneName: 'never' });
 
-	const offset = date.getTimezoneOffset();
-	const sign = offset <= 0 ? '+' : '-';
-	const offsetHours = `${Math.floor(Math.abs(offset) / 60)}`.padStart(2, '0');
-	const offsetMinutes = `${Math.abs(offset) % 60}`.padStart(2, '0');
-
-	return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${offsetHours}:${offsetMinutes}`;
-};
-
-export const formatDate = (date: Date, timeZone?: string): string =>
-	new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+export const formatDate = (instant: Temporal.Instant, timeZone?: string): string =>
+	instant
+		.toZonedDateTimeISO(timeZone ?? Temporal.Now.timeZoneId())
+		.toPlainDate()
+		.toString();
 
 export const formatDuration = (ms: number): string => {
 	if (ms < 1000) {

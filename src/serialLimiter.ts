@@ -16,13 +16,13 @@ export const createSerialLimiter = (minIntervalMs: number): SerialLimiter => {
 
 			const previousStartedAt = startedAt.get(key);
 			if (previousStartedAt !== undefined) {
-				const remainingMs = minIntervalMs - (Date.now() - previousStartedAt);
+				const remainingMs = minIntervalMs - (Temporal.Now.instant().epochMilliseconds - previousStartedAt);
 				if (remainingMs > 0) {
 					await sleep(remainingMs);
 				}
 			}
 
-			startedAt.set(key, Date.now());
+			startedAt.set(key, Temporal.Now.instant().epochMilliseconds);
 			return task();
 		})();
 

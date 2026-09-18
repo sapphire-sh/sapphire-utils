@@ -13,7 +13,7 @@ export interface LogEntry {
 	level: LogLevel;
 	message: string;
 	payload?: unknown;
-	timestamp: Date;
+	timestamp: Temporal.Instant;
 }
 
 export type LogSink = (entry: LogEntry) => void;
@@ -56,8 +56,8 @@ const log = (level: LogLevel, message: string, payload?: Payload) => {
 		return;
 	}
 
-	const timestamp = new Date();
-	const prefix = `[${timestamp.toISOString()}] [${LogLevel[level].toUpperCase()}]`;
+	const timestamp = Temporal.Now.instant();
+	const prefix = `[${timestamp.toString({ smallestUnit: 'millisecond' })}] [${LogLevel[level].toUpperCase()}]`;
 	const payloadStr = payload === undefined ? '' : serializePayload(payload);
 	const output = `${prefix} ${message}${payloadStr}`;
 
