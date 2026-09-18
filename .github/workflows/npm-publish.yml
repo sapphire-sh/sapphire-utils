@@ -3,11 +3,17 @@ name: npm-publish
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 jobs:
   publish:
     uses: sapphire-sh/github-actions/.github/workflows/npm-publish-template.yml@main
     with:
+      release_tag: ${{ inputs.tag }}
       run_tests: true
       runner: ubuntu-latest
     secrets:
