@@ -94,7 +94,7 @@
 		"prettier": ">=3.0.0",
 		"prettier-plugin-organize-imports": ">=4.0.0",
 		"typescript-eslint": ">=8.0.0",
-		"vitest": ">=4.0.0"
+		"vitest": ">=5.0.0"
 	},
 	"peerDependenciesMeta": {
 		"@eslint/js": {
@@ -126,7 +126,7 @@
 		"@eslint/js": "^9.24.0",
 		"@types/node": "^25.5.0",
 		"@typescript/native": "npm:typescript@^7.0.2",
-		"@vitest/coverage-v8": "^4.1.1",
+		"@vitest/coverage-v8": "^5.0.1",
 		"eslint": "^9.24.0",
 		"eslint-config-next": "^16.3.5",
 		"eslint-config-prettier": "^10.1.2",
@@ -135,6 +135,6 @@
 		"prettier-plugin-organize-imports": "^4.3.0",
 		"typescript": "npm:@typescript/typescript6@^6.0.2",
 		"typescript-eslint": "^8.29.1",
-		"vitest": "^4.1.1"
+		"vitest": "^5.0.1"
 	}
 }
