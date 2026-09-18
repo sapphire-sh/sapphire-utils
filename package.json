@@ -7,7 +7,7 @@
 	"main": "./lib/index.js",
 	"types": "./lib/index.d.ts",
 	"bin": {
-		"sapphire-bootstrap": "./bin/sapphire-bootstrap.js"
+		"sapphire-bootstrap": "bin/sapphire-bootstrap.js"
 	},
 	"exports": {
 		".": {
