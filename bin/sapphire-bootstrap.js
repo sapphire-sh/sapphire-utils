@@ -13,7 +13,7 @@ const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 // Templates a consuming repo edits with its own values, so bootstrap only seeds them once.
 const preserved = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 
-const sectioned = new Set(['.gitignore']);
+const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
 	['editorconfig.template', '.editorconfig'],
 	['gitignore.template', '.gitignore'],
