@@ -4,7 +4,6 @@
 		"lib": ["ESNext", "DOM"],
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
-		"outDir": "./lib",
 		"declaration": true,
 		"declarationMap": true,
 		"sourceMap": true,
