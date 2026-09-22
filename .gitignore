@@ -3,7 +3,6 @@
 *.tsbuildinfo
 .DS_Store
 .env
-.github/context-mode/
 /build/
 /coverage/
 /data/
