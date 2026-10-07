@@ -11,7 +11,10 @@ const selfPackageName = '@sapphire-sh/utils';
 const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 
 // Templates a consuming repo edits with its own values, so bootstrap only seeds them once.
-const preserved = new Set([join('.github', 'workflows', 'utils-update.yml')]);
+const preserved = new Set([
+	join('.github', 'workflows', 'utils-update.yml'),
+	join('.github', 'workflows', 'npm-audit-fix.yml'),
+]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([

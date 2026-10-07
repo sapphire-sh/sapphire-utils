@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = fileURLToPath(new URL('sapphire-bootstrap.js', import.meta.url));
-const workflowPath = join('.github', 'workflows', 'utils-update.yml');
+const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml');
+const npmAuditFixWorkflowPath = join('.github', 'workflows', 'npm-audit-fix.yml');
 const prettierignoreTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/prettierignore.template', import.meta.url)),
 	'utf-8',
@@ -35,21 +36,21 @@ describe('sapphire-bootstrap', () => {
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`wrote ${workflowPath}`);
-		expect(readFileSync(join(project, workflowPath), 'utf-8')).toContain('utils-update-template.yml');
+		expect(output).toContain(`wrote ${utilsUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, utilsUpdateWorkflowPath), 'utf-8')).toContain('utils-update-template.yml');
 	});
 
 	it('keeps an existing utils update workflow and reports it as skipped', () => {
 		const project = createProject();
 		const existing = 'name: utils-update\n\njobs:\n  update:\n    with:\n      rebuild_packages: example-package\n';
-		mkdirSync(join(project, dirname(workflowPath)), { recursive: true });
-		writeFileSync(join(project, workflowPath), existing);
+		mkdirSync(join(project, dirname(utilsUpdateWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, utilsUpdateWorkflowPath), existing);
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`skipped ${workflowPath}`);
-		expect(output).not.toContain(`wrote ${workflowPath}`);
-		expect(readFileSync(join(project, workflowPath), 'utf-8')).toBe(existing);
+		expect(output).toContain(`skipped ${utilsUpdateWorkflowPath}`);
+		expect(output).not.toContain(`wrote ${utilsUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, utilsUpdateWorkflowPath), 'utf-8')).toBe(existing);
 	});
 
 	it('skips the utils update workflow when the target is utils itself', () => {
@@ -58,8 +59,40 @@ describe('sapphire-bootstrap', () => {
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`skipped ${workflowPath}`);
-		expect(existsSync(join(project, workflowPath))).toBe(false);
+		expect(output).toContain(`skipped ${utilsUpdateWorkflowPath}`);
+		expect(existsSync(join(project, utilsUpdateWorkflowPath))).toBe(false);
+	});
+
+	it('copies the npm audit fix workflow when the target does not have one', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${npmAuditFixWorkflowPath}`);
+		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toContain('npm-audit-fix-template.yml');
+	});
+
+	it('keeps an existing npm audit fix workflow and reports it as skipped', () => {
+		const project = createProject();
+		const existing = 'name: npm-audit-fix\n\njobs:\n  fix:\n    with:\n      rebuild_packages: example-package\n';
+		mkdirSync(join(project, dirname(npmAuditFixWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, npmAuditFixWorkflowPath), existing);
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${npmAuditFixWorkflowPath}`);
+		expect(output).not.toContain(`wrote ${npmAuditFixWorkflowPath}`);
+		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toBe(existing);
+	});
+
+	it('copies the npm audit fix workflow when the target is utils itself', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: '@sapphire-sh/utils' }));
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${npmAuditFixWorkflowPath}`);
+		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toContain('npm-audit-fix-template.yml');
 	});
 
 	it('replaces only the marked section of an existing .prettierignore', () => {
