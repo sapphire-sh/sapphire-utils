@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const START_MARKER = '# @sapphire-sh/utils:start';
@@ -10,11 +10,9 @@ const END_MARKER = '# @sapphire-sh/utils:end';
 const selfPackageName = '@sapphire-sh/utils';
 const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 
-// Templates a consuming repo edits with its own values, so bootstrap only seeds them once.
-const preserved = new Set([
-	join('.github', 'workflows', 'utils-update.yml'),
-	join('.github', 'workflows', 'npm-audit-fix.yml'),
-]);
+const workflowsDir = join('.github', 'workflows');
+const workflowValuesPath = join('.github', 'sapphire-workflows.json');
+const withLinePattern = /^\s*with:\s*$/m;
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
@@ -41,7 +39,18 @@ const readPackageName = () => {
 	}
 };
 
+const readWorkflowValues = () => {
+	const filepath = join(cwd, workflowValuesPath);
+
+	if (existsSync(filepath) === false) {
+		return {};
+	}
+
+	return JSON.parse(readFileSync(filepath, 'utf-8'));
+};
+
 const isSelf = readPackageName() === selfPackageName;
+const workflowValues = readWorkflowValues();
 
 const writeSectioned = (outputName, content) => {
 	const filepath = join(cwd, outputName);
@@ -65,6 +74,30 @@ const writeSectioned = (outputName, content) => {
 		writeFileSync(filepath, `${section}\n\n${existing}`);
 	}
 
+	console.log(`wrote ${outputName}`);
+};
+
+const writeWorkflow = (outputName, template) => {
+	const filepath = join(cwd, outputName);
+	const values = workflowValues[basename(outputName, '.yml')];
+	let content = template;
+
+	if (values === undefined) {
+		if (existsSync(filepath) && withLinePattern.test(readFileSync(filepath, 'utf-8'))) {
+			console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
+		}
+	} else {
+		if (withLinePattern.test(template) === false) {
+			content += '    with:\n';
+		}
+
+		for (const [key, value] of Object.entries(values)) {
+			content += `      ${key}: ${JSON.stringify(value)}\n`;
+		}
+	}
+
+	mkdirSync(dirname(filepath), { recursive: true });
+	writeFileSync(filepath, content);
 	console.log(`wrote ${outputName}`);
 };
 
@@ -93,12 +126,9 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 		continue;
 	}
 
-	if (preserved.has(outputName) && existsSync(outputPath)) {
-		console.log(`skipped ${outputName}`);
-		continue;
-	}
-
-	if (sectioned.has(outputName)) {
+	if (dirname(outputName) === workflowsDir) {
+		writeWorkflow(outputName, readFileSync(join(templatesDir, relativePath), 'utf-8'));
+	} else if (sectioned.has(outputName)) {
 		const content = readFileSync(join(templatesDir, relativePath), 'utf-8');
 		writeSectioned(outputName, content);
 	} else {
