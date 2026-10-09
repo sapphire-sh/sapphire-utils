@@ -1,0 +1,17 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-shared-ci:
+    uses: sapphire-sh/github-actions/.github/workflows/docker-ci-template.yml@main
+    secrets: inherit
+    with:
+      image_name: ${{ github.event.repository.name }}
