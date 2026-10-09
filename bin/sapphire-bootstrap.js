@@ -13,6 +13,7 @@ const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const withLinePattern = /^\s*with:\s*$/m;
+const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
@@ -122,6 +123,11 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 	const outputPath = join(cwd, outputName);
 
 	if (isSelf && selfSkipped.has(outputName)) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
+	if (requiredFiles.has(outputName) && existsSync(join(cwd, requiredFiles.get(outputName))) === false) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}

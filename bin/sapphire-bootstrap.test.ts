@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const scriptPath = fileURLToPath(new URL('sapphire-bootstrap.js', import.meta.url));
 const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml');
 const npmAuditFixWorkflowPath = join('.github', 'workflows', 'npm-audit-fix.yml');
+const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const utilsUpdateTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/utils-update.yml', import.meta.url)),
@@ -15,6 +16,10 @@ const utilsUpdateTemplate = readFileSync(
 );
 const npmAuditFixTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/npm-audit-fix.yml', import.meta.url)),
+	'utf-8',
+);
+const dockerPublishTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/docker-publish.yml', import.meta.url)),
 	'utf-8',
 );
 const prettierignoreTemplate = readFileSync(
@@ -136,6 +141,43 @@ describe('sapphire-bootstrap', () => {
 
 		expect(output).toContain(`wrote ${npmAuditFixWorkflowPath}`);
 		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toContain('npm-audit-fix-template.yml');
+	});
+
+	it('writes the docker publish workflow when the target has a Dockerfile', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${dockerPublishWorkflowPath}`);
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(dockerPublishTemplate);
+	});
+
+	it('skips the docker publish workflow when the target has no Dockerfile', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${dockerPublishWorkflowPath}`);
+		expect(existsSync(join(project, dockerPublishWorkflowPath))).toBe(false);
+		expect(output).toContain(`wrote ${utilsUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, utilsUpdateWorkflowPath), 'utf-8')).toBe(utilsUpdateTemplate);
+	});
+
+	it('appends the docker-publish values after the image_name line', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { platforms: 'linux/arm64', run_tests: true } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			`${dockerPublishTemplate}      platforms: "linux/arm64"\n      run_tests: true\n`,
+		);
 	});
 
 	it('replaces only the marked section of an existing .prettierignore', () => {
