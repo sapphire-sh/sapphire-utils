@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: cron
+      cronjob: '0 0 * * *'
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@sapphire-sh/utils'
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: cron
+      cronjob: '0 0 * * *'
