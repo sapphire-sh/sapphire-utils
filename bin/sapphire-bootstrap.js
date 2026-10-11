@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,7 +8,8 @@ const START_MARKER = '# @sapphire-sh/utils:start';
 const END_MARKER = '# @sapphire-sh/utils:end';
 
 const selfPackageName = '@sapphire-sh/utils';
-const selfSkipped = new Set([join('.github', 'workflows', 'utils-update.yml')]);
+const selfSkipped = new Set([join('.github', 'workflows', 'shared-config-update.yml')]);
+const obsoleteFiles = new Set([join('.github', 'workflows', 'utils-update.yml')]);
 
 const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
@@ -141,5 +142,14 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 		mkdirSync(dirname(outputPath), { recursive: true });
 		copyFileSync(join(templatesDir, relativePath), outputPath);
 		console.log(`wrote ${outputName}`);
+	}
+}
+
+for (const relativePath of obsoleteFiles) {
+	const filepath = join(cwd, relativePath);
+
+	if (existsSync(filepath)) {
+		rmSync(filepath);
+		console.log(`removed ${relativePath}`);
 	}
 }
