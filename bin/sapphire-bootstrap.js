@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -136,16 +137,26 @@ const writeWorkflow = (outputName, template) => {
 const writeDependabotConfig = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const manifestDirectories = [];
-	const pendingDirectories = [''];
+	const trackedFiles = spawnSync('git', ['ls-files'], { cwd, encoding: 'utf-8' });
 
-	while (pendingDirectories.length > 0) {
-		const relativeDirectory = pendingDirectories.pop();
+	if (trackedFiles.status === 0) {
+		for (const path of trackedFiles.stdout.split('\n')) {
+			if (basename(path) === 'package.json' && dirname(path) !== '.') {
+				manifestDirectories.push(`/${dirname(path)}`);
+			}
+		}
+	} else {
+		const pendingDirectories = [''];
 
-		for (const entry of readdirSync(join(cwd, relativeDirectory), { withFileTypes: true })) {
-			if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
-				pendingDirectories.push(relativeDirectory === '' ? entry.name : `${relativeDirectory}/${entry.name}`);
-			} else if (entry.isFile() && entry.name === 'package.json' && relativeDirectory !== '') {
-				manifestDirectories.push(`/${relativeDirectory}`);
+		while (pendingDirectories.length > 0) {
+			const relativeDirectory = pendingDirectories.pop();
+
+			for (const entry of readdirSync(join(cwd, relativeDirectory), { withFileTypes: true })) {
+				if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
+					pendingDirectories.push(relativeDirectory === '' ? entry.name : `${relativeDirectory}/${entry.name}`);
+				} else if (entry.isFile() && entry.name === 'package.json' && relativeDirectory !== '') {
+					manifestDirectories.push(`/${relativeDirectory}`);
+				}
 			}
 		}
 	}
