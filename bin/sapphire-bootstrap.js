@@ -17,6 +17,8 @@ const withLinePattern = /^\s*with:\s*$/m;
 const pathsIgnoreLinePattern = /^\s*paths-ignore:\s*$/m;
 const pushBlockPattern = /^on:\n(?:[ \t].*\n|\n)*? {2}push:\n((?: {4}.*\n|\n)*)/m;
 const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
+const entryKeys = new Set(['push', 'with']);
+const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
@@ -95,27 +97,26 @@ const writeWorkflow = (outputName, template) => {
 			console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
 		}
 	} else {
-		const { 'paths-ignore': pathsIgnore, ...withValues } = values;
+		const { push = {}, with: withValues } = values;
 
-		if (pathsIgnore !== undefined) {
-			const pathsIgnoreLines = pathsIgnore.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
-			content = content.replace(
-				branchesListPattern,
-				(branchesList) => `${branchesList}    paths-ignore:\n${pathsIgnoreLines}`,
-			);
+		for (const [key, patterns] of Object.entries(push)) {
+			const patternLines = patterns.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
+			content = content.replace(branchesListPattern, (branchesList) => `${branchesList}    ${key}:\n${patternLines}`);
 		}
 
-		if (withLinePattern.test(template) === false) {
-			content += '    with:\n';
-		}
+		if (withValues !== undefined) {
+			if (withLinePattern.test(template) === false) {
+				content += '    with:\n';
+			}
 
-		for (const [key, value] of Object.entries(withValues)) {
-			content += `      ${key}: ${formatYamlValue(value)}\n`;
+			for (const [key, value] of Object.entries(withValues)) {
+				content += `      ${key}: ${formatYamlValue(value)}\n`;
+			}
 		}
 	}
 
 	if (
-		(values === undefined || Object.hasOwn(values, 'paths-ignore') === false) &&
+		(values?.push === undefined || Object.hasOwn(values.push, 'paths-ignore') === false) &&
 		existsSync(filepath) &&
 		pathsIgnoreLinePattern.test(readFileSync(filepath, 'utf-8'))
 	) {
@@ -146,15 +147,39 @@ const collectTemplates = (directory, prefix) => {
 for (const [name, values] of Object.entries(workflowValues)) {
 	const callerPath = join(workflowsDir, `${name}.yml`);
 
-	if (Object.hasOwn(values, 'paths-ignore') === false) {
+	for (const key of Object.keys(values)) {
+		if (entryKeys.has(key) === false) {
+			console.error(`error: ${workflowValuesPath} ${name} has unknown key ${key}`);
+			process.exit(1);
+		}
+	}
+
+	if (values.push === undefined) {
 		continue;
 	}
 
+	for (const key of Object.keys(values.push)) {
+		if (pushKeys.has(key) === false) {
+			console.error(`error: ${workflowValuesPath} ${name}.push has unknown key ${key}`);
+			process.exit(1);
+		}
+	}
+
+	if (Object.hasOwn(values.push, 'paths') && Object.hasOwn(values.push, 'paths-ignore')) {
+		console.error(`error: ${workflowValuesPath} ${name}.push sets both paths and paths-ignore`);
+		process.exit(1);
+	}
+
+	if (Object.keys(values.push).length === 0) {
+		continue;
+	}
+
+	const [pushKey] = Object.keys(values.push);
 	const pushBlock = pushBlockPattern.exec(readFileSync(join(templatesDir, callerPath), 'utf-8'));
 
 	if (pushBlock === null || /^ {4}paths:/m.test(pushBlock[1])) {
 		console.error(
-			`error: ${workflowValuesPath} sets paths-ignore for ${callerPath}, whose template has no push trigger without paths`,
+			`error: ${workflowValuesPath} sets push.${pushKey} for ${callerPath}, whose template has no push trigger without paths`,
 		);
 		process.exit(1);
 	}

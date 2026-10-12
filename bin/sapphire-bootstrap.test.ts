@@ -132,7 +132,7 @@ describe('sapphire-bootstrap', () => {
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'shared-config-update': { run_tests: true, rebuild_packages: 'example-package' } }),
+			JSON.stringify({ 'shared-config-update': { with: { run_tests: true, rebuild_packages: 'example-package' } } }),
 		);
 
 		runBootstrap(project);
@@ -146,7 +146,10 @@ describe('sapphire-bootstrap', () => {
 	it('writes a with: value containing a single quote in JSON notation', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
-		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'shared-config-update': { key: "it's" } }));
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'shared-config-update': { with: { key: "it's" } } }),
+		);
 
 		runBootstrap(project);
 
@@ -245,7 +248,7 @@ describe('sapphire-bootstrap', () => {
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'docker-publish': { platforms: 'linux/arm64', run_tests: true } }),
+			JSON.stringify({ 'docker-publish': { with: { platforms: 'linux/arm64', run_tests: true } } }),
 		);
 
 		runBootstrap(project);
@@ -262,7 +265,10 @@ describe('sapphire-bootstrap', () => {
 		writeFileSync(
 			join(project, workflowValuesPath),
 			JSON.stringify({
-				'docker-publish': { 'paths-ignore': ['**/*.md', 'example/**'], platforms: 'linux/arm64' },
+				'docker-publish': {
+					push: { 'paths-ignore': ['**/*.md', 'example/**'] },
+					with: { platforms: 'linux/arm64' },
+				},
 			}),
 		);
 
@@ -276,21 +282,101 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it('puts the docker-publish paths values after the branches list', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { push: { paths: ['src/**'] } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			dockerPublishTemplate.replace(
+				'    branches:\n      - main\n',
+				"    branches:\n      - main\n    paths:\n      - 'src/**'\n",
+			),
+		);
+	});
+
+	it('exits with an error when an entry has a key other than push and with', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'docker-publish': { run_tests: true } }));
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${workflowValuesPath} docker-publish has unknown key run_tests\n`);
+		expect(readdirSync(project, { recursive: true }).toSorted()).toEqual(
+			['.github', workflowValuesPath, 'Dockerfile'].toSorted(),
+		);
+	});
+
+	it('exits with an error when push has a key other than paths and paths-ignore', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { push: { branches: ['main'] } } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${workflowValuesPath} docker-publish.push has unknown key branches\n`);
+	});
+
+	it('exits with an error when push sets both paths and paths-ignore', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { push: { paths: ['src/**'], 'paths-ignore': ['**/*.md'] } } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${workflowValuesPath} docker-publish.push sets both paths and paths-ignore\n`);
+	});
+
 	it('exits with an error and writes no file when npm-audit-fix sets paths-ignore', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'npm-audit-fix': { 'paths-ignore': ['**/*.md'] } }),
+			JSON.stringify({ 'npm-audit-fix': { push: { 'paths-ignore': ['**/*.md'] } } }),
 		);
 
 		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
 
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(
-			`error: ${workflowValuesPath} sets paths-ignore for ${npmAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
+			`error: ${workflowValuesPath} sets push.paths-ignore for ${npmAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
 		);
 		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
+	});
+
+	it('exits with an error when npm-audit-fix sets push.paths', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'npm-audit-fix': { push: { paths: ['src/**'] } } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${workflowValuesPath} sets push.paths for ${npmAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
+		);
 	});
 
 	it('exits with an error when shared-config-update sets paths-ignore', () => {
@@ -298,14 +384,14 @@ describe('sapphire-bootstrap', () => {
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'shared-config-update': { 'paths-ignore': ['**/*.md'] } }),
+			JSON.stringify({ 'shared-config-update': { push: { 'paths-ignore': ['**/*.md'] } } }),
 		);
 
 		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
 
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(
-			`error: ${workflowValuesPath} sets paths-ignore for ${sharedConfigUpdateWorkflowPath}, whose template has no push trigger without paths\n`,
+			`error: ${workflowValuesPath} sets push.paths-ignore for ${sharedConfigUpdateWorkflowPath}, whose template has no push trigger without paths\n`,
 		);
 	});
 
@@ -315,7 +401,7 @@ describe('sapphire-bootstrap', () => {
 		mkdirSync(join(project, dirname(dockerPublishWorkflowPath)), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'docker-publish': { platforms: 'linux/arm64' } }),
+			JSON.stringify({ 'docker-publish': { with: { platforms: 'linux/arm64' } } }),
 		);
 		writeFileSync(
 			join(project, dockerPublishWorkflowPath),
