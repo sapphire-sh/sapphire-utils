@@ -216,6 +216,18 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(dockerPublishTemplate);
 	});
 
+	it('triggers the docker publish workflow on pull requests without a branch filter', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+
+		runBootstrap(project);
+
+		const content = readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8');
+		expect(content.slice(0, content.indexOf('\nconcurrency:'))).toBe(
+			'name: Build and Push Docker Image\n\non:\n  push:\n    branches:\n      - main\n  pull_request:\n',
+		);
+	});
+
 	it('skips the docker publish workflow when the target has no Dockerfile', () => {
 		const project = createProject();
 
