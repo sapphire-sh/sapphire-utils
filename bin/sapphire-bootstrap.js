@@ -14,6 +14,9 @@ const obsoleteFiles = new Set([join('.github', 'workflows', 'utils-update.yml')]
 const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const withLinePattern = /^\s*with:\s*$/m;
+const pathsIgnoreLinePattern = /^\s*paths-ignore:\s*$/m;
+const pushBlockPattern = /^on:\n(?:[ \t].*\n|\n)*? {2}push:\n((?: {4}.*\n|\n)*)/m;
+const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
@@ -89,13 +92,31 @@ const writeWorkflow = (outputName, template) => {
 			console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
 		}
 	} else {
+		const { 'paths-ignore': pathsIgnore, ...withValues } = values;
+
+		if (pathsIgnore !== undefined) {
+			const pathsIgnoreLines = pathsIgnore.map((value) => `      - ${JSON.stringify(value)}\n`).join('');
+			content = content.replace(
+				branchesListPattern,
+				(branchesList) => `${branchesList}    paths-ignore:\n${pathsIgnoreLines}`,
+			);
+		}
+
 		if (withLinePattern.test(template) === false) {
 			content += '    with:\n';
 		}
 
-		for (const [key, value] of Object.entries(values)) {
+		for (const [key, value] of Object.entries(withValues)) {
 			content += `      ${key}: ${JSON.stringify(value)}\n`;
 		}
+	}
+
+	if (
+		(values === undefined || Object.hasOwn(values, 'paths-ignore') === false) &&
+		existsSync(filepath) &&
+		pathsIgnoreLinePattern.test(readFileSync(filepath, 'utf-8'))
+	) {
+		console.log(`warning: ${outputName} had paths-ignore values that are not in ${workflowValuesPath}`);
 	}
 
 	mkdirSync(dirname(filepath), { recursive: true });
@@ -118,6 +139,23 @@ const collectTemplates = (directory, prefix) => {
 
 	return relativePaths;
 };
+
+for (const [name, values] of Object.entries(workflowValues)) {
+	const callerPath = join(workflowsDir, `${name}.yml`);
+
+	if (Object.hasOwn(values, 'paths-ignore') === false) {
+		continue;
+	}
+
+	const pushBlock = pushBlockPattern.exec(readFileSync(join(templatesDir, callerPath), 'utf-8'));
+
+	if (pushBlock === null || /^ {4}paths:/m.test(pushBlock[1])) {
+		console.error(
+			`error: ${workflowValuesPath} sets paths-ignore for ${callerPath}, whose template has no push trigger without paths`,
+		);
+		process.exit(1);
+	}
+}
 
 for (const relativePath of collectTemplates(templatesDir, '')) {
 	const outputName = renameMap.get(relativePath) ?? relativePath;

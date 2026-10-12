@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -216,6 +216,83 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
 			`${dockerPublishTemplate}      platforms: "linux/arm64"\n      run_tests: true\n`,
+		);
+	});
+
+	it('puts the docker-publish paths-ignore values after the branches list', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({
+				'docker-publish': { 'paths-ignore': ['**/*.md', 'example/**'], platforms: 'linux/arm64' },
+			}),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			`${dockerPublishTemplate.replace(
+				'    branches:\n      - main\n',
+				'    branches:\n      - main\n    paths-ignore:\n      - "**/*.md"\n      - "example/**"\n',
+			)}      platforms: "linux/arm64"\n`,
+		);
+	});
+
+	it('exits with an error and writes no file when npm-audit-fix sets paths-ignore', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'npm-audit-fix': { 'paths-ignore': ['**/*.md'] } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${workflowValuesPath} sets paths-ignore for ${npmAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
+		);
+		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
+	});
+
+	it('exits with an error when shared-config-update sets paths-ignore', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'shared-config-update': { 'paths-ignore': ['**/*.md'] } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${workflowValuesPath} sets paths-ignore for ${sharedConfigUpdateWorkflowPath}, whose template has no push trigger without paths\n`,
+		);
+	});
+
+	it('warns and overwrites when an existing caller has paths-ignore values the JSON file lacks', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, dirname(dockerPublishWorkflowPath)), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { platforms: 'linux/arm64' } }),
+		);
+		writeFileSync(
+			join(project, dockerPublishWorkflowPath),
+			dockerPublishTemplate.replace('      - main\n', '      - main\n    paths-ignore:\n      - "**/*.md"\n'),
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([
+			`warning: ${dockerPublishWorkflowPath} had paths-ignore values that are not in ${workflowValuesPath}`,
+		]);
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			`${dockerPublishTemplate}      platforms: "linux/arm64"\n`,
 		);
 	});
 
