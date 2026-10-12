@@ -15,3 +15,5 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    secrets:
+      PULL_REQUEST_TOKEN: ${{ secrets.PULL_REQUEST_TOKEN }}

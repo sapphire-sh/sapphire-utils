@@ -102,6 +102,18 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toContain('npm-audit-fix-template.yml');
 	});
 
+	it('passes PULL_REQUEST_TOKEN from the callers that open pull requests', () => {
+		const project = createProject();
+		const secretsBlock = '    secrets:\n      PULL_REQUEST_TOKEN: ${{ secrets.PULL_REQUEST_TOKEN }}\n';
+
+		runBootstrap(project);
+
+		for (const workflowPath of [sharedConfigUpdateWorkflowPath, npmAuditFixWorkflowPath]) {
+			const content = readFileSync(join(project, workflowPath), 'utf-8');
+			expect(content.slice(-secretsBlock.length)).toBe(secretsBlock);
+		}
+	});
+
 	it('overwrites an existing npm audit fix workflow with the template', () => {
 		const project = createProject();
 		const existing = 'name: npm-audit-fix\n\njobs:\n  fix:\n    with:\n      rebuild_packages: example-package\n';
