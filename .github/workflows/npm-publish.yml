@@ -14,6 +14,7 @@ jobs:
   publish:
     uses: sapphire-sh/github-actions/.github/workflows/node-publish-template.yml@main
     with:
+      version_bump: major
       release_tag: ${{ inputs.tag }}
       run_tests: true
       runner: ubuntu-latest
