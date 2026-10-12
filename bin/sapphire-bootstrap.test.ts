@@ -102,6 +102,52 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
 	});
 
+	it('writes the dependabot config unchanged when only the root has a package.json', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${dependabotConfigPath}`);
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
+	});
+
+	it('lists the root and every subdirectory with a package.json as the npm directories', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
+		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+		mkdirSync(join(project, 'apps', 'web'), { recursive: true });
+		writeFileSync(join(project, 'apps', 'web', 'package.json'), JSON.stringify({ name: 'web' }));
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			dependabotTemplate.replace(
+				'  - package-ecosystem: npm\n    directory: /\n',
+				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/apps/web'\n      - '/packages/core'\n",
+			),
+		);
+	});
+
+	it('leaves package.json files under node_modules out of the npm directories', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+		mkdirSync(join(project, 'node_modules', 'dependency'), { recursive: true });
+		writeFileSync(join(project, 'node_modules', 'dependency', 'package.json'), JSON.stringify({ name: 'dependency' }));
+		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
+		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			dependabotTemplate.replace(
+				'  - package-ecosystem: npm\n    directory: /\n',
+				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/core'\n",
+			),
+		);
+	});
+
 	it('copies the node audit fix workflow when the target does not have one', () => {
 		const project = createProject();
 

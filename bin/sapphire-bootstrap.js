@@ -133,6 +133,41 @@ const writeWorkflow = (outputName, template) => {
 	console.log(`wrote ${outputName}`);
 };
 
+const writeDependabotConfig = (outputName, template) => {
+	const filepath = join(cwd, outputName);
+	const manifestDirectories = [];
+	const pendingDirectories = [''];
+
+	while (pendingDirectories.length > 0) {
+		const relativeDirectory = pendingDirectories.pop();
+
+		for (const entry of readdirSync(join(cwd, relativeDirectory), { withFileTypes: true })) {
+			if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
+				pendingDirectories.push(relativeDirectory === '' ? entry.name : `${relativeDirectory}/${entry.name}`);
+			} else if (entry.isFile() && entry.name === 'package.json' && relativeDirectory !== '') {
+				manifestDirectories.push(`/${relativeDirectory}`);
+			}
+		}
+	}
+
+	let content = template;
+
+	if (manifestDirectories.length > 0) {
+		const directoryLines = ['/', ...manifestDirectories]
+			.toSorted()
+			.map((directory) => `      - ${formatYamlValue(directory)}\n`)
+			.join('');
+		content = template.replace(
+			'  - package-ecosystem: npm\n    directory: /\n',
+			`  - package-ecosystem: npm\n    directories:\n${directoryLines}`,
+		);
+	}
+
+	mkdirSync(dirname(filepath), { recursive: true });
+	writeFileSync(filepath, content);
+	console.log(`wrote ${outputName}`);
+};
+
 const collectTemplates = (directory, prefix) => {
 	const relativePaths = [];
 
@@ -221,6 +256,8 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 
 	if (dirname(outputName) === workflowsDir) {
 		writeWorkflow(outputName, readFileSync(join(templatesDir, relativePath), 'utf-8'));
+	} else if (outputName === join('.github', 'dependabot.yml')) {
+		writeDependabotConfig(outputName, readFileSync(join(templatesDir, relativePath), 'utf-8'));
 	} else if (sectioned.has(outputName)) {
 		const content = readFileSync(join(templatesDir, relativePath), 'utf-8');
 		writeSectioned(outputName, content);
