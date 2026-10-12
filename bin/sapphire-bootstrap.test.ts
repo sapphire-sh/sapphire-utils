@@ -1,5 +1,14 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	readdirSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -137,6 +146,23 @@ describe('sapphire-bootstrap', () => {
 		writeFileSync(join(project, 'node_modules', 'dependency', 'package.json'), JSON.stringify({ name: 'dependency' }));
 		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
 		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			dependabotTemplate.replace(
+				'  - package-ecosystem: npm\n    directory: /\n',
+				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/core'\n",
+			),
+		);
+	});
+
+	it('leaves a symlinked directory out of the npm directories', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
+		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+		symlinkSync(join(project, 'packages', 'core'), join(project, 'linked'));
 
 		runBootstrap(project);
 
