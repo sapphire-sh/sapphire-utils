@@ -82,6 +82,9 @@ const writeSectioned = (outputName, content) => {
 	console.log(`wrote ${outputName}`);
 };
 
+const formatYamlValue = (value) =>
+	typeof value === 'string' && value.includes("'") === false ? `'${value}'` : JSON.stringify(value);
+
 const writeWorkflow = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const values = workflowValues[basename(outputName, '.yml')];
@@ -95,7 +98,7 @@ const writeWorkflow = (outputName, template) => {
 		const { 'paths-ignore': pathsIgnore, ...withValues } = values;
 
 		if (pathsIgnore !== undefined) {
-			const pathsIgnoreLines = pathsIgnore.map((value) => `      - ${JSON.stringify(value)}\n`).join('');
+			const pathsIgnoreLines = pathsIgnore.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
 			content = content.replace(
 				branchesListPattern,
 				(branchesList) => `${branchesList}    paths-ignore:\n${pathsIgnoreLines}`,
@@ -107,7 +110,7 @@ const writeWorkflow = (outputName, template) => {
 		}
 
 		for (const [key, value] of Object.entries(withValues)) {
-			content += `      ${key}: ${JSON.stringify(value)}\n`;
+			content += `      ${key}: ${formatYamlValue(value)}\n`;
 		}
 	}
 

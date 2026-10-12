@@ -126,9 +126,21 @@ describe('sapphire-bootstrap', () => {
 		runBootstrap(project);
 
 		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
-			`${sharedConfigUpdateTemplate}    with:\n      run_tests: true\n      rebuild_packages: "example-package"\n`,
+			`${sharedConfigUpdateTemplate}    with:\n      run_tests: true\n      rebuild_packages: 'example-package'\n`,
 		);
 		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toBe(npmAuditFixTemplate);
+	});
+
+	it('writes a with: value containing a single quote in JSON notation', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'shared-config-update': { key: "it's" } }));
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			`${sharedConfigUpdateTemplate}    with:\n      key: "it's"\n`,
+		);
 	});
 
 	it('warns and overwrites when an existing caller has with: values the JSON file lacks', () => {
@@ -215,7 +227,7 @@ describe('sapphire-bootstrap', () => {
 		runBootstrap(project);
 
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
-			`${dockerPublishTemplate}      platforms: "linux/arm64"\n      run_tests: true\n`,
+			`${dockerPublishTemplate}      platforms: 'linux/arm64'\n      run_tests: true\n`,
 		);
 	});
 
@@ -235,8 +247,8 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
 			`${dockerPublishTemplate.replace(
 				'    branches:\n      - main\n',
-				'    branches:\n      - main\n    paths-ignore:\n      - "**/*.md"\n      - "example/**"\n',
-			)}      platforms: "linux/arm64"\n`,
+				"    branches:\n      - main\n    paths-ignore:\n      - '**/*.md'\n      - 'example/**'\n",
+			)}      platforms: 'linux/arm64'\n`,
 		);
 	});
 
@@ -292,7 +304,7 @@ describe('sapphire-bootstrap', () => {
 			`warning: ${dockerPublishWorkflowPath} had paths-ignore values that are not in ${workflowValuesPath}`,
 		]);
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
-			`${dockerPublishTemplate}      platforms: "linux/arm64"\n`,
+			`${dockerPublishTemplate}      platforms: 'linux/arm64'\n`,
 		);
 	});
 
