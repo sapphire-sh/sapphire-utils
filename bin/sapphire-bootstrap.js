@@ -137,10 +137,10 @@ const writeWorkflow = (outputName, template) => {
 const writeDependabotConfig = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const manifestDirectories = [];
-	const trackedFiles = spawnSync('git', ['ls-files'], { cwd, encoding: 'utf-8' });
+	const trackedFiles = spawnSync('git', ['ls-files', '-z'], { cwd, encoding: 'utf-8' });
 
 	if (trackedFiles.status === 0) {
-		for (const path of trackedFiles.stdout.split('\n')) {
+		for (const path of trackedFiles.stdout.split('\0')) {
 			if (basename(path) === 'package.json' && dirname(path) !== '.') {
 				manifestDirectories.push(`/${dirname(path)}`);
 			}

@@ -214,6 +214,24 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it('lists a git-tracked package.json directory whose name has non-ASCII characters', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+		mkdirSync(join(project, 'packages', '한글'), { recursive: true });
+		writeFileSync(join(project, 'packages', '한글', 'package.json'), JSON.stringify({ name: 'korean' }));
+		execFileSync('git', ['init'], { cwd: project });
+		execFileSync('git', ['add', '.'], { cwd: project });
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			dependabotTemplate.replace(
+				'  - package-ecosystem: npm\n    directory: /\n',
+				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/한글'\n",
+			),
+		);
+	});
+
 	it('copies the node audit fix workflow when the target does not have one', () => {
 		const project = createProject();
 
