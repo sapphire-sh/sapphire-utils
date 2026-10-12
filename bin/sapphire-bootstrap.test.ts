@@ -195,6 +195,25 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it('leaves a symlinked directory out of the npm directories when the target is a git repository', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
+		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+		symlinkSync(join(project, 'packages', 'core'), join(project, 'linked'));
+		execFileSync('git', ['init'], { cwd: project });
+		execFileSync('git', ['add', '.'], { cwd: project });
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			dependabotTemplate.replace(
+				'  - package-ecosystem: npm\n    directory: /\n',
+				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/core'\n",
+			),
+		);
+	});
+
 	it('copies the node audit fix workflow when the target does not have one', () => {
 		const project = createProject();
 
