@@ -12,7 +12,7 @@ on:
 
 jobs:
   publish:
-    uses: sapphire-sh/github-actions/.github/workflows/npm-publish-template.yml@main
+    uses: sapphire-sh/github-actions/.github/workflows/node-publish-template.yml@main
     with:
       release_tag: ${{ inputs.tag }}
       run_tests: true

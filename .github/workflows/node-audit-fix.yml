@@ -1,4 +1,4 @@
-name: npm-audit-fix
+name: node-audit-fix
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   fix:
-    uses: sapphire-sh/github-actions/.github/workflows/npm-audit-fix-template.yml@main
+    uses: sapphire-sh/github-actions/.github/workflows/node-audit-fix-template.yml@main
     permissions:
       contents: write
       issues: write

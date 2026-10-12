@@ -6,23 +6,23 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = fileURLToPath(new URL('sapphire-bootstrap.js', import.meta.url));
-const sharedConfigUpdateWorkflowPath = join('.github', 'workflows', 'shared-config-update.yml');
+const nodeSharedConfigUpdateWorkflowPath = join('.github', 'workflows', 'node-shared-config-update.yml');
 const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml');
 const dependabotConfigPath = join('.github', 'dependabot.yml');
-const npmAuditFixWorkflowPath = join('.github', 'workflows', 'npm-audit-fix.yml');
+const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.yml');
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
 const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
-const sharedConfigUpdateTemplate = readFileSync(
-	fileURLToPath(new URL('../templates/.github/workflows/shared-config-update.yml', import.meta.url)),
+const nodeSharedConfigUpdateTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/node-shared-config-update.yml', import.meta.url)),
 	'utf-8',
 );
 const dependabotTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/dependabot.yml', import.meta.url)),
 	'utf-8',
 );
-const npmAuditFixTemplate = readFileSync(
-	fileURLToPath(new URL('../templates/.github/workflows/npm-audit-fix.yml', import.meta.url)),
+const nodeAuditFixTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/node-audit-fix.yml', import.meta.url)),
 	'utf-8',
 );
 const dockerPublishTemplate = readFileSync(
@@ -56,37 +56,41 @@ afterEach(() => {
 });
 
 describe('sapphire-bootstrap', () => {
-	it('copies the shared config update workflow when the target does not have one', () => {
+	it('copies the node shared config update workflow when the target does not have one', () => {
 		const project = createProject();
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`wrote ${sharedConfigUpdateWorkflowPath}`);
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(sharedConfigUpdateTemplate);
+		expect(output).toContain(`wrote ${nodeSharedConfigUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
 	});
 
-	it('overwrites an existing shared config update workflow with the template', () => {
+	it('overwrites an existing node shared config update workflow with the template', () => {
 		const project = createProject();
 		const existing =
-			'name: shared-config-update\n\njobs:\n  update:\n    with:\n      rebuild_packages: example-package\n';
-		mkdirSync(join(project, dirname(sharedConfigUpdateWorkflowPath)), { recursive: true });
-		writeFileSync(join(project, sharedConfigUpdateWorkflowPath), existing);
+			'name: node-shared-config-update\n\njobs:\n  update:\n    with:\n      rebuild_packages: example-package\n';
+		mkdirSync(join(project, dirname(nodeSharedConfigUpdateWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), existing);
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`wrote ${sharedConfigUpdateWorkflowPath}`);
-		expect(output).not.toContain(`skipped ${sharedConfigUpdateWorkflowPath}`);
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(sharedConfigUpdateTemplate);
+		expect(output).toContain(`wrote ${nodeSharedConfigUpdateWorkflowPath}`);
+		expect(output).not.toContain(`skipped ${nodeSharedConfigUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
 	});
 
-	it('skips the shared config update workflow when the target is utils itself', () => {
+	it('skips the node shared config update workflow when the target is utils itself', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: '@sapphire-sh/utils' }));
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`skipped ${sharedConfigUpdateWorkflowPath}`);
-		expect(existsSync(join(project, sharedConfigUpdateWorkflowPath))).toBe(false);
+		expect(output).toContain(`skipped ${nodeSharedConfigUpdateWorkflowPath}`);
+		expect(existsSync(join(project, nodeSharedConfigUpdateWorkflowPath))).toBe(false);
 	});
 
 	it('copies the dependabot config when the target does not have one', () => {
@@ -98,13 +102,13 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
 	});
 
-	it('copies the npm audit fix workflow when the target does not have one', () => {
+	it('copies the node audit fix workflow when the target does not have one', () => {
 		const project = createProject();
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`wrote ${npmAuditFixWorkflowPath}`);
-		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toContain('npm-audit-fix-template.yml');
+		expect(output).toContain(`wrote ${nodeAuditFixWorkflowPath}`);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toContain('node-audit-fix-template.yml');
 	});
 
 	it('passes PULL_REQUEST_TOKEN from the callers that open pull requests', () => {
@@ -113,23 +117,23 @@ describe('sapphire-bootstrap', () => {
 
 		runBootstrap(project);
 
-		for (const workflowPath of [sharedConfigUpdateWorkflowPath, npmAuditFixWorkflowPath]) {
+		for (const workflowPath of [nodeSharedConfigUpdateWorkflowPath, nodeAuditFixWorkflowPath]) {
 			const content = readFileSync(join(project, workflowPath), 'utf-8');
 			expect(content.slice(-secretsBlock.length)).toBe(secretsBlock);
 		}
 	});
 
-	it('overwrites an existing npm audit fix workflow with the template', () => {
+	it('overwrites an existing node audit fix workflow with the template', () => {
 		const project = createProject();
-		const existing = 'name: npm-audit-fix\n\njobs:\n  fix:\n    with:\n      rebuild_packages: example-package\n';
-		mkdirSync(join(project, dirname(npmAuditFixWorkflowPath)), { recursive: true });
-		writeFileSync(join(project, npmAuditFixWorkflowPath), existing);
+		const existing = 'name: node-audit-fix\n\njobs:\n  fix:\n    with:\n      rebuild_packages: example-package\n';
+		mkdirSync(join(project, dirname(nodeAuditFixWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, nodeAuditFixWorkflowPath), existing);
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`wrote ${npmAuditFixWorkflowPath}`);
-		expect(output).not.toContain(`skipped ${npmAuditFixWorkflowPath}`);
-		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toBe(npmAuditFixTemplate);
+		expect(output).toContain(`wrote ${nodeAuditFixWorkflowPath}`);
+		expect(output).not.toContain(`skipped ${nodeAuditFixWorkflowPath}`);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
 	});
 
 	it('appends the values from .github/sapphire-workflows.json as a with: block', () => {
@@ -137,15 +141,17 @@ describe('sapphire-bootstrap', () => {
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'shared-config-update': { with: { run_tests: true, rebuild_packages: 'example-package' } } }),
+			JSON.stringify({
+				'node-shared-config-update': { with: { run_tests: true, rebuild_packages: 'example-package' } },
+			}),
 		);
 
 		runBootstrap(project);
 
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
-			`${sharedConfigUpdateTemplate}    with:\n      run_tests: true\n      rebuild_packages: 'example-package'\n`,
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			`${nodeSharedConfigUpdateTemplate}    with:\n      run_tests: true\n      rebuild_packages: 'example-package'\n`,
 		);
-		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toBe(npmAuditFixTemplate);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
 	});
 
 	it('writes a with: value containing a single quote in JSON notation', () => {
@@ -153,32 +159,34 @@ describe('sapphire-bootstrap', () => {
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'shared-config-update': { with: { key: "it's" } } }),
+			JSON.stringify({ 'node-shared-config-update': { with: { key: "it's" } } }),
 		);
 
 		runBootstrap(project);
 
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
-			`${sharedConfigUpdateTemplate}    with:\n      key: "it's"\n`,
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			`${nodeSharedConfigUpdateTemplate}    with:\n      key: "it's"\n`,
 		);
 	});
 
 	it('warns and overwrites when an existing caller has with: values the JSON file lacks', () => {
 		const project = createProject();
-		mkdirSync(join(project, dirname(sharedConfigUpdateWorkflowPath)), { recursive: true });
+		mkdirSync(join(project, dirname(nodeSharedConfigUpdateWorkflowPath)), { recursive: true });
 		writeFileSync(
-			join(project, sharedConfigUpdateWorkflowPath),
-			'name: shared-config-update\n\njobs:\n  update:\n    with:\n      rebuild_packages: example-package\n',
+			join(project, nodeSharedConfigUpdateWorkflowPath),
+			'name: node-shared-config-update\n\njobs:\n  update:\n    with:\n      rebuild_packages: example-package\n',
 		);
-		writeFileSync(join(project, npmAuditFixWorkflowPath), 'name: npm-audit-fix\n\njobs:\n  fix:\n');
+		writeFileSync(join(project, nodeAuditFixWorkflowPath), 'name: node-audit-fix\n\njobs:\n  fix:\n');
 
 		const output = runBootstrap(project);
 
 		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([
-			`warning: ${sharedConfigUpdateWorkflowPath} had with: values that are not in ${workflowValuesPath}`,
+			`warning: ${nodeSharedConfigUpdateWorkflowPath} had with: values that are not in ${workflowValuesPath}`,
 		]);
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(sharedConfigUpdateTemplate);
-		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toBe(npmAuditFixTemplate);
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
 	});
 
 	it('removes an obsolete utils update workflow from the target', () => {
@@ -192,7 +200,31 @@ describe('sapphire-bootstrap', () => {
 			`removed ${utilsUpdateWorkflowPath}`,
 		]);
 		expect(existsSync(join(project, utilsUpdateWorkflowPath))).toBe(false);
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(sharedConfigUpdateTemplate);
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
+	});
+
+	it('removes the npm-audit-fix and shared-config-update callers renamed to node-audit-fix and node-shared-config-update', () => {
+		const project = createProject();
+		const npmAuditFixWorkflowPath = join('.github', 'workflows', 'npm-audit-fix.yml');
+		const sharedConfigUpdateWorkflowPath = join('.github', 'workflows', 'shared-config-update.yml');
+		mkdirSync(join(project, dirname(npmAuditFixWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, npmAuditFixWorkflowPath), 'name: npm-audit-fix\n');
+		writeFileSync(join(project, sharedConfigUpdateWorkflowPath), 'name: shared-config-update\n');
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('removed '))).toEqual([
+			`removed ${npmAuditFixWorkflowPath}`,
+			`removed ${sharedConfigUpdateWorkflowPath}`,
+		]);
+		expect(existsSync(join(project, npmAuditFixWorkflowPath))).toBe(false);
+		expect(existsSync(join(project, sharedConfigUpdateWorkflowPath))).toBe(false);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
 	});
 
 	it('prints no removed line when the target has no obsolete workflow', () => {
@@ -201,17 +233,17 @@ describe('sapphire-bootstrap', () => {
 		const output = runBootstrap(project);
 
 		expect(output.split('\n').filter((line) => line.startsWith('removed '))).toEqual([]);
-		expect(output).toContain(`wrote ${sharedConfigUpdateWorkflowPath}`);
+		expect(output).toContain(`wrote ${nodeSharedConfigUpdateWorkflowPath}`);
 	});
 
-	it('copies the npm audit fix workflow when the target is utils itself', () => {
+	it('copies the node audit fix workflow when the target is utils itself', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: '@sapphire-sh/utils' }));
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`wrote ${npmAuditFixWorkflowPath}`);
-		expect(readFileSync(join(project, npmAuditFixWorkflowPath), 'utf-8')).toContain('npm-audit-fix-template.yml');
+		expect(output).toContain(`wrote ${nodeAuditFixWorkflowPath}`);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toContain('node-audit-fix-template.yml');
 	});
 
 	it('writes the docker publish workflow when the target has a Dockerfile', () => {
@@ -243,8 +275,10 @@ describe('sapphire-bootstrap', () => {
 
 		expect(output).toContain(`skipped ${dockerPublishWorkflowPath}`);
 		expect(existsSync(join(project, dockerPublishWorkflowPath))).toBe(false);
-		expect(output).toContain(`wrote ${sharedConfigUpdateWorkflowPath}`);
-		expect(readFileSync(join(project, sharedConfigUpdateWorkflowPath), 'utf-8')).toBe(sharedConfigUpdateTemplate);
+		expect(output).toContain(`wrote ${nodeSharedConfigUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
 	});
 
 	it('appends the docker-publish values after the image_name line', () => {
@@ -351,53 +385,68 @@ describe('sapphire-bootstrap', () => {
 		expect(result.stderr).toBe(`error: ${workflowValuesPath} docker-publish.push sets both paths and paths-ignore\n`);
 	});
 
-	it('exits with an error and writes no file when npm-audit-fix sets paths-ignore', () => {
+	it('exits with an error and writes no file when node-audit-fix sets paths-ignore', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'npm-audit-fix': { push: { 'paths-ignore': ['**/*.md'] } } }),
+			JSON.stringify({ 'node-audit-fix': { push: { 'paths-ignore': ['**/*.md'] } } }),
 		);
 
 		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
 
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(
-			`error: ${workflowValuesPath} sets push.paths-ignore for ${npmAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
+			`error: ${workflowValuesPath} sets push.paths-ignore for ${nodeAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
 		);
 		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
 	});
 
-	it('exits with an error when npm-audit-fix sets push.paths', () => {
+	it('exits with an error when node-audit-fix sets push.paths', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'npm-audit-fix': { push: { paths: ['src/**'] } } }),
+			JSON.stringify({ 'node-audit-fix': { push: { paths: ['src/**'] } } }),
 		);
 
 		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
 
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(
-			`error: ${workflowValuesPath} sets push.paths for ${npmAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
+			`error: ${workflowValuesPath} sets push.paths for ${nodeAuditFixWorkflowPath}, whose template has no push trigger without paths\n`,
 		);
 	});
 
-	it('exits with an error when shared-config-update sets paths-ignore', () => {
+	it('exits with an error when node-shared-config-update sets paths-ignore', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
 			join(project, workflowValuesPath),
-			JSON.stringify({ 'shared-config-update': { push: { 'paths-ignore': ['**/*.md'] } } }),
+			JSON.stringify({ 'node-shared-config-update': { push: { 'paths-ignore': ['**/*.md'] } } }),
 		);
 
 		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
 
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(
-			`error: ${workflowValuesPath} sets push.paths-ignore for ${sharedConfigUpdateWorkflowPath}, whose template has no push trigger without paths\n`,
+			`error: ${workflowValuesPath} sets push.paths-ignore for ${nodeSharedConfigUpdateWorkflowPath}, whose template has no push trigger without paths\n`,
 		);
+	});
+
+	it('exits with an error when an entry names no workflow template', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'shared-config-update': { with: { run_tests: true } } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${workflowValuesPath} shared-config-update names no workflow template\n`);
+		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
 	});
 
 	it('warns and overwrites when an existing caller has paths-ignore values the JSON file lacks', () => {

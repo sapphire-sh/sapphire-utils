@@ -1,4 +1,4 @@
-name: shared-config-update
+name: node-shared-config-update
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   update:
-    uses: sapphire-sh/github-actions/.github/workflows/shared-config-update-template.yml@main
+    uses: sapphire-sh/github-actions/.github/workflows/node-shared-config-update-template.yml@main
     permissions:
       contents: write
       issues: write

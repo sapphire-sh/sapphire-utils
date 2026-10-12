@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   call-shared-ci:
-    uses: sapphire-sh/github-actions/.github/workflows/docker-ci-template.yml@main
+    uses: sapphire-sh/github-actions/.github/workflows/docker-publish-template.yml@main
     secrets: inherit
     with:
       image_name: ${{ github.event.repository.name }}

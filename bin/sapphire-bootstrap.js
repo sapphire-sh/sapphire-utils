@@ -8,8 +8,12 @@ const START_MARKER = '# @sapphire-sh/utils:start';
 const END_MARKER = '# @sapphire-sh/utils:end';
 
 const selfPackageName = '@sapphire-sh/utils';
-const selfSkipped = new Set([join('.github', 'workflows', 'shared-config-update.yml')]);
-const obsoleteFiles = new Set([join('.github', 'workflows', 'utils-update.yml')]);
+const selfSkipped = new Set([join('.github', 'workflows', 'node-shared-config-update.yml')]);
+const obsoleteFiles = new Set([
+	join('.github', 'workflows', 'utils-update.yml'),
+	join('.github', 'workflows', 'npm-audit-fix.yml'),
+	join('.github', 'workflows', 'shared-config-update.yml'),
+]);
 
 const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
@@ -147,6 +151,11 @@ const collectTemplates = (directory, prefix) => {
 
 for (const [name, values] of Object.entries(workflowValues)) {
 	const callerPath = join(workflowsDir, `${name}.yml`);
+
+	if (existsSync(join(templatesDir, callerPath)) === false) {
+		console.error(`error: ${workflowValuesPath} ${name} names no workflow template`);
+		process.exit(1);
+	}
 
 	for (const key of Object.keys(values)) {
 		if (entryKeys.has(key) === false) {
