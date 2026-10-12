@@ -1,0 +1,18 @@
+name: Publish Userscript
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-shared-publish:
+    uses: sapphire-sh/github-actions/.github/workflows/userscript-publish-template.yml@main
+    permissions:
+      contents: write
+    secrets: inherit

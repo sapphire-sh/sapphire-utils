@@ -20,6 +20,7 @@ const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
 const entryKeys = new Set(['push', 'with']);
 const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
+const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
@@ -154,6 +155,11 @@ for (const [name, values] of Object.entries(workflowValues)) {
 		}
 	}
 
+	if (name === 'userscript-publish' && values.with?.assets === undefined) {
+		console.error(`error: ${workflowValuesPath} userscript-publish has no with.assets`);
+		process.exit(1);
+	}
+
 	if (values.push === undefined) {
 		continue;
 	}
@@ -195,6 +201,11 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 	}
 
 	if (requiredFiles.has(outputName) && existsSync(join(cwd, requiredFiles.get(outputName))) === false) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
+	if (entryRequiredFiles.has(outputName) && Object.hasOwn(workflowValues, basename(outputName, '.yml')) === false) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}

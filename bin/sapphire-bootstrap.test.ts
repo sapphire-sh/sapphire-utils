@@ -11,6 +11,7 @@ const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml')
 const dependabotConfigPath = join('.github', 'dependabot.yml');
 const npmAuditFixWorkflowPath = join('.github', 'workflows', 'npm-audit-fix.yml');
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
+const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const sharedConfigUpdateTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/shared-config-update.yml', import.meta.url)),
@@ -26,6 +27,10 @@ const npmAuditFixTemplate = readFileSync(
 );
 const dockerPublishTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/docker-publish.yml', import.meta.url)),
+	'utf-8',
+);
+const userscriptPublishTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/userscript-publish.yml', import.meta.url)),
 	'utf-8',
 );
 const prettierignoreTemplate = readFileSync(
@@ -416,6 +421,42 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
 			`${dockerPublishTemplate}      platforms: 'linux/arm64'\n`,
 		);
+	});
+
+	it('writes the userscript publish workflow with the with.assets value when the JSON file has its entry', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'userscript-publish': { with: { assets: 'dist/*.user.js' } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, userscriptPublishWorkflowPath), 'utf-8')).toBe(
+			`${userscriptPublishTemplate}    with:\n      assets: 'dist/*.user.js'\n`,
+		);
+	});
+
+	it('skips the userscript publish workflow when the JSON file has no userscript-publish entry', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${userscriptPublishWorkflowPath}`);
+		expect(existsSync(join(project, userscriptPublishWorkflowPath))).toBe(false);
+	});
+
+	it('exits with an error when the userscript-publish entry has no with.assets', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'userscript-publish': {} }));
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${workflowValuesPath} userscript-publish has no with.assets\n`);
+		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
 	});
 
 	it('replaces only the marked section of an existing .prettierignore', () => {
