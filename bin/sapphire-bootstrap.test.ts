@@ -365,6 +365,36 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it('prints no warning on a second run when the dependabot review request caller has only the reviewers line', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		runBootstrap(project);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([]);
+		expect(readFileSync(join(project, dependabotReviewRequestWorkflowPath), 'utf-8')).toBe(
+			`${dependabotReviewRequestTemplate}    with:\n      reviewers: 'example-user'\n`,
+		);
+	});
+
+	it('warns when the dependabot review request caller has a with: value besides the reviewers line', () => {
+		const project = createProject();
+		mkdirSync(join(project, dirname(dependabotReviewRequestWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		writeFileSync(
+			join(project, dependabotReviewRequestWorkflowPath),
+			`${dependabotReviewRequestTemplate}    with:\n      runner: 'self-hosted'\n      reviewers: 'example-user'\n`,
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([
+			`warning: ${dependabotReviewRequestWorkflowPath} had with: values that are not in ${workflowValuesPath}`,
+		]);
+	});
+
 	it('copies the node audit fix workflow when the target does not have one', () => {
 		const project = createProject();
 
