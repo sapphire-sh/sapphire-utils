@@ -21,6 +21,7 @@ const dependabotConfigPath = join('.github', 'dependabot.yml');
 const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.yml');
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
 const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
+const dependabotReviewRequestWorkflowPath = join('.github', 'workflows', 'dependabot-review-request.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const codeOwnersPath = join('.github', 'CODEOWNERS');
 const nodeSharedConfigUpdateTemplate = readFileSync(
@@ -41,6 +42,10 @@ const dockerPublishTemplate = readFileSync(
 );
 const userscriptPublishTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/userscript-publish.yml', import.meta.url)),
+	'utf-8',
+);
+const dependabotReviewRequestTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/dependabot-review-request.yml', import.meta.url)),
 	'utf-8',
 );
 const prettierignoreTemplate = readFileSync(
@@ -307,6 +312,57 @@ describe('sapphire-bootstrap', () => {
 		runBootstrap(project);
 
 		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
+	});
+
+	it('writes the dependabot review request workflow unchanged when the target has no CODEOWNERS', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${dependabotReviewRequestWorkflowPath}`);
+		expect(readFileSync(join(project, dependabotReviewRequestWorkflowPath), 'utf-8')).toBe(
+			dependabotReviewRequestTemplate,
+		);
+	});
+
+	it('passes the CODEOWNERS default owner as the dependabot review request reviewers', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotReviewRequestWorkflowPath), 'utf-8')).toBe(
+			`${dependabotReviewRequestTemplate}    with:\n      reviewers: 'example-user'\n`,
+		);
+	});
+
+	it('joins the users on the last CODEOWNERS * line with a space as the reviewers value', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @first-user @second-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotReviewRequestWorkflowPath), 'utf-8')).toBe(
+			`${dependabotReviewRequestTemplate}    with:\n      reviewers: 'first-user second-user'\n`,
+		);
+	});
+
+	it('writes the reviewers line after the dependabot-review-request values from .github/sapphire-workflows.json', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'dependabot-review-request': { with: { runner: 'self-hosted' } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotReviewRequestWorkflowPath), 'utf-8')).toBe(
+			`${dependabotReviewRequestTemplate}    with:\n      runner: 'self-hosted'\n      reviewers: 'example-user'\n`,
+		);
 	});
 
 	it('copies the node audit fix workflow when the target does not have one', () => {

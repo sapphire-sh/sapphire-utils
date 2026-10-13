@@ -64,7 +64,7 @@ const readWorkflowValues = () => {
 
 const codeOwnersPath = join('.github', 'CODEOWNERS');
 
-const readCodeOwnerAssignees = () => {
+const readCodeOwnerUsers = () => {
 	const filepath = join(cwd, codeOwnersPath);
 
 	if (existsSync(filepath) === false) {
@@ -147,6 +147,18 @@ const writeWorkflow = (outputName, template) => {
 		}
 	}
 
+	if (basename(outputName, '.yml') === 'dependabot-review-request') {
+		const reviewers = readCodeOwnerUsers();
+
+		if (reviewers.length > 0) {
+			if (withLinePattern.test(content) === false) {
+				content += '    with:\n';
+			}
+
+			content += `      reviewers: ${formatYamlValue(reviewers.join(' '))}\n`;
+		}
+	}
+
 	if (
 		(values?.push === undefined || Object.hasOwn(values.push, 'paths-ignore') === false) &&
 		existsSync(filepath) &&
@@ -200,7 +212,7 @@ const writeDependabotConfig = (outputName, template) => {
 		);
 	}
 
-	const assignees = readCodeOwnerAssignees();
+	const assignees = readCodeOwnerUsers();
 
 	if (assignees.length > 0) {
 		const assigneeLines = assignees.map((assignee) => `      - ${formatYamlValue(assignee)}\n`).join('');
