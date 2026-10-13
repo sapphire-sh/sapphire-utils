@@ -62,6 +62,32 @@ const readWorkflowValues = () => {
 	return JSON.parse(readFileSync(filepath, 'utf-8'));
 };
 
+const codeOwnersPath = join('.github', 'CODEOWNERS');
+
+const readCodeOwnerAssignees = () => {
+	const filepath = join(cwd, codeOwnersPath);
+
+	if (existsSync(filepath) === false) {
+		return [];
+	}
+
+	let assignees = [];
+
+	for (const line of readFileSync(filepath, 'utf-8').split('\n')) {
+		const tokens = line.trim().split(/\s+/);
+		const commentIndex = tokens.findIndex((token) => token.startsWith('#'));
+		const [pattern, ...owners] = commentIndex === -1 ? tokens : tokens.slice(0, commentIndex);
+
+		if (pattern === '*') {
+			assignees = owners
+				.filter((owner) => owner.startsWith('@') && owner.includes('/') === false)
+				.map((owner) => owner.slice(1));
+		}
+	}
+
+	return assignees;
+};
+
 const isSelf = readPackageName() === selfPackageName;
 const workflowValues = readWorkflowValues();
 
@@ -172,6 +198,18 @@ const writeDependabotConfig = (outputName, template) => {
 			'  - package-ecosystem: npm\n    directory: /\n',
 			`  - package-ecosystem: npm\n    directories:\n${directoryLines}`,
 		);
+	}
+
+	const assignees = readCodeOwnerAssignees();
+
+	if (assignees.length > 0) {
+		const assigneeLines = assignees.map((assignee) => `      - ${formatYamlValue(assignee)}\n`).join('');
+		content = content
+			.split(/(?=^ {2}- package-ecosystem: )/m)
+			.map((entry) =>
+				entry.startsWith('  - package-ecosystem: ') === true ? `${entry}    assignees:\n${assigneeLines}` : entry,
+			)
+			.join('');
 	}
 
 	mkdirSync(dirname(filepath), { recursive: true });

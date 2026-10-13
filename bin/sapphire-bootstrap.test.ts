@@ -22,6 +22,7 @@ const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.ym
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
 const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
+const codeOwnersPath = join('.github', 'CODEOWNERS');
 const nodeSharedConfigUpdateTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/node-shared-config-update.yml', import.meta.url)),
 	'utf-8',
@@ -230,6 +231,82 @@ describe('sapphire-bootstrap', () => {
 				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/한글'\n",
 			),
 		);
+	});
+
+	it('assigns the CODEOWNERS default owner to every dependabot update entry', () => {
+		const project = createProject();
+		const assigneeBlock = "    assignees:\n      - 'example-user'\n";
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			`${dependabotTemplate.replace(
+				'  - package-ecosystem: github-actions\n',
+				`${assigneeBlock}  - package-ecosystem: github-actions\n`,
+			)}${assigneeBlock}`,
+		);
+	});
+
+	it('writes the npm directories and the CODEOWNERS assignees together', () => {
+		const project = createProject();
+		const assigneeBlock = "    assignees:\n      - 'example-user'\n";
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
+		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
+		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			`${dependabotTemplate
+				.replace(
+					'  - package-ecosystem: npm\n    directory: /\n',
+					"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/core'\n",
+				)
+				.replace(
+					'  - package-ecosystem: github-actions\n',
+					`${assigneeBlock}  - package-ecosystem: github-actions\n`,
+				)}${assigneeBlock}`,
+		);
+	});
+
+	it('takes only the user owners on the last * line of CODEOWNERS as assignees', () => {
+		const project = createProject();
+		const assigneeBlock = "    assignees:\n      - 'example-user'\n      - 'second-user'\n";
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, codeOwnersPath),
+			[
+				'# Default owners',
+				'* @first-user',
+				'',
+				'/docs/ @docs-user',
+				'* @example-user @example-org/example-team owner@example.com @second-user # @commented-user',
+				'',
+			].join('\n'),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			`${dependabotTemplate.replace(
+				'  - package-ecosystem: github-actions\n',
+				`${assigneeBlock}  - package-ecosystem: github-actions\n`,
+			)}${assigneeBlock}`,
+		);
+	});
+
+	it('writes the dependabot config unchanged when the CODEOWNERS * line has only team and email owners', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-org/example-team owner@example.com\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
 	});
 
 	it('copies the node audit fix workflow when the target does not have one', () => {
