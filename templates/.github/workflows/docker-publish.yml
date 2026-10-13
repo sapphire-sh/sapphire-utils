@@ -13,6 +13,9 @@ concurrency:
 jobs:
   call-shared-ci:
     uses: sapphire-sh/github-actions/.github/workflows/docker-publish-template.yml@main
+    permissions:
+      actions: read
+      contents: read
     secrets: inherit
     with:
       image_name: ${{ github.event.repository.name }}

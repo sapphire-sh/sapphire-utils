@@ -14,5 +14,6 @@ jobs:
   call-shared-publish:
     uses: sapphire-sh/github-actions/.github/workflows/userscript-publish-template.yml@main
     permissions:
+      actions: read
       contents: write
     secrets: inherit

@@ -561,6 +561,29 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it('passes actions: read and contents: read from the docker publish caller job', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+
+		runBootstrap(project);
+
+		const content = readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8');
+		expect(content.slice(content.indexOf('jobs:\n'))).toBe(
+			[
+				'jobs:',
+				'  call-shared-ci:',
+				'    uses: sapphire-sh/github-actions/.github/workflows/docker-publish-template.yml@main',
+				'    permissions:',
+				'      actions: read',
+				'      contents: read',
+				'    secrets: inherit',
+				'    with:',
+				'      image_name: ${{ github.event.repository.name }}',
+				'',
+			].join('\n'),
+		);
+	});
+
 	it('skips the docker publish workflow when the target has no Dockerfile', () => {
 		const project = createProject();
 
@@ -777,6 +800,33 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, userscriptPublishWorkflowPath), 'utf-8')).toBe(
 			`${userscriptPublishTemplate}    with:\n      assets: 'dist/*.user.js'\n`,
+		);
+	});
+
+	it('passes actions: read and contents: write from the userscript publish caller job', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'userscript-publish': { with: { assets: 'dist/*.user.js' } } }),
+		);
+
+		runBootstrap(project);
+
+		const content = readFileSync(join(project, userscriptPublishWorkflowPath), 'utf-8');
+		expect(content.slice(content.indexOf('jobs:\n'))).toBe(
+			[
+				'jobs:',
+				'  call-shared-publish:',
+				'    uses: sapphire-sh/github-actions/.github/workflows/userscript-publish-template.yml@main',
+				'    permissions:',
+				'      actions: read',
+				'      contents: write',
+				'    secrets: inherit',
+				'    with:',
+				"      assets: 'dist/*.user.js'",
+				'',
+			].join('\n'),
 		);
 	});
 
