@@ -1,0 +1,21 @@
+name: npm-publish-startup-failure-notify
+
+on:
+  workflow_run:
+    workflows:
+      - npm-publish
+    types:
+      - completed
+
+jobs:
+  notify:
+    if: github.event.workflow_run.conclusion == 'startup_failure'
+    uses: sapphire-sh/github-actions/.github/workflows/notify-template.yml@main
+    permissions:
+      actions: read
+      contents: read
+    secrets: inherit
+    with:
+      result: ${{ github.event.workflow_run.conclusion }}
+      context: ${{ github.event.workflow_run.name }}
+      runner: ubuntu-latest
