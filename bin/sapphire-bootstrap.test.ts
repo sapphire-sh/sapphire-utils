@@ -48,6 +48,11 @@ const dependabotReviewRequestTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/dependabot-review-request.yml', import.meta.url)),
 	'utf-8',
 );
+const workflowTemplatesDirectory = fileURLToPath(new URL('../templates/.github/workflows', import.meta.url));
+const workflowStartupFailureNotifyTemplate = readFileSync(
+	join(workflowTemplatesDirectory, 'workflow-startup-failure-notify.yml'),
+	'utf-8',
+);
 const prettierignoreTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/prettierignore.template', import.meta.url)),
 	'utf-8',
@@ -369,6 +374,7 @@ describe('sapphire-bootstrap', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'workflow-startup-failure-notify': {} }));
 		runBootstrap(project);
 
 		const output = runBootstrap(project);
@@ -849,6 +855,19 @@ describe('sapphire-bootstrap', () => {
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(`error: ${workflowValuesPath} userscript-publish has no with.assets\n`);
 		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
+	});
+
+	it('watches the name: of every other workflow template from the startup failure notify workflow', () => {
+		const otherNames = readdirSync(workflowTemplatesDirectory)
+			.filter((name) => name !== 'workflow-startup-failure-notify.yml')
+			.map((name) => /^name: (.*)$/m.exec(readFileSync(join(workflowTemplatesDirectory, name), 'utf-8'))?.[1]);
+		const [, watchedBlock] = /^ {4}workflows:\n((?: {6}- .*\n)*)/m.exec(workflowStartupFailureNotifyTemplate) ?? [];
+		const watchedNames = watchedBlock
+			.split('\n')
+			.filter((line) => line !== '')
+			.map((line) => line.slice('      - '.length));
+
+		expect(watchedNames.toSorted()).toEqual(otherNames.toSorted());
 	});
 
 	it('replaces only the marked section of an existing .prettierignore', () => {
