@@ -122,6 +122,39 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
 	});
 
+	it('excludes @sapphire-sh/utils from the npm cooldown', () => {
+		const project = createProject();
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			[
+				'version: 2',
+				'updates:',
+				'  - package-ecosystem: npm',
+				'    directory: /',
+				'    schedule:',
+				'      interval: cron',
+				"      cronjob: '0 0 * * *'",
+				'    groups:',
+				'      dependencies:',
+				'        patterns:',
+				"          - '*'",
+				'        exclude-patterns:',
+				"          - '@sapphire-sh/utils'",
+				'    cooldown:',
+				'      exclude:',
+				"        - '@sapphire-sh/utils'",
+				'  - package-ecosystem: github-actions',
+				'    directory: /',
+				'    schedule:',
+				'      interval: cron',
+				"      cronjob: '0 0 * * *'",
+				'',
+			].join('\n'),
+		);
+	});
+
 	it('writes the dependabot config unchanged when only the root has a package.json', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'example' }));
@@ -256,6 +289,45 @@ describe('sapphire-bootstrap', () => {
 				'  - package-ecosystem: github-actions\n',
 				`${assigneeBlock}  - package-ecosystem: github-actions\n`,
 			)}${assigneeBlock}`,
+		);
+	});
+
+	it('writes the CODEOWNERS assignees after the npm cooldown block', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			[
+				'version: 2',
+				'updates:',
+				'  - package-ecosystem: npm',
+				'    directory: /',
+				'    schedule:',
+				'      interval: cron',
+				"      cronjob: '0 0 * * *'",
+				'    groups:',
+				'      dependencies:',
+				'        patterns:',
+				"          - '*'",
+				'        exclude-patterns:',
+				"          - '@sapphire-sh/utils'",
+				'    cooldown:',
+				'      exclude:',
+				"        - '@sapphire-sh/utils'",
+				'    assignees:',
+				"      - 'example-user'",
+				'  - package-ecosystem: github-actions',
+				'    directory: /',
+				'    schedule:',
+				'      interval: cron',
+				"      cronjob: '0 0 * * *'",
+				'    assignees:',
+				"      - 'example-user'",
+				'',
+			].join('\n'),
 		);
 	});
 

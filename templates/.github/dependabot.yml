@@ -11,6 +11,9 @@ updates:
           - '*'
         exclude-patterns:
           - '@sapphire-sh/utils'
+    cooldown:
+      exclude:
+        - '@sapphire-sh/utils'
   - package-ecosystem: github-actions
     directory: /
     schedule:
