@@ -9,7 +9,10 @@ const START_MARKER = '# @sapphire-sh/utils:start';
 const END_MARKER = '# @sapphire-sh/utils:end';
 
 const selfPackageName = '@sapphire-sh/utils';
-const selfSkipped = new Set([join('.github', 'workflows', 'node-shared-config-update.yml')]);
+const selfSkipped = new Set([
+	join('.github', 'workflows', 'node-shared-config-update.yml'),
+	join('.github', 'workflows', 'node-verify.yml'),
+]);
 const obsoleteFiles = new Set([
 	join('.github', 'workflows', 'utils-update.yml'),
 	join('.github', 'workflows', 'npm-audit-fix.yml'),
@@ -26,6 +29,7 @@ const entryKeys = new Set(['push', 'with']);
 const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
 const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')]);
+const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), 'userscript-publish']]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
@@ -326,6 +330,11 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 	}
 
 	if (entryRequiredFiles.has(outputName) && Object.hasOwn(workflowValues, basename(outputName, '.yml')) === false) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
+	if (entryExcludedFiles.has(outputName) && Object.hasOwn(workflowValues, entryExcludedFiles.get(outputName))) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}

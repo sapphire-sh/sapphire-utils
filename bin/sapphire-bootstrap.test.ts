@@ -21,6 +21,7 @@ const dependabotConfigPath = join('.github', 'dependabot.yml');
 const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.yml');
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
 const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
+const nodeVerifyWorkflowPath = join('.github', 'workflows', 'node-verify.yml');
 const dependabotReviewRequestWorkflowPath = join('.github', 'workflows', 'dependabot-review-request.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const codeOwnersPath = join('.github', 'CODEOWNERS');
@@ -42,6 +43,10 @@ const dockerPublishTemplate = readFileSync(
 );
 const userscriptPublishTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/userscript-publish.yml', import.meta.url)),
+	'utf-8',
+);
+const nodeVerifyTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/node-verify.yml', import.meta.url)),
 	'utf-8',
 );
 const dependabotReviewRequestTemplate = readFileSync(
@@ -949,6 +954,41 @@ describe('sapphire-bootstrap', () => {
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(`error: ${workflowValuesPath} userscript-publish has no with.assets\n`);
 		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
+	});
+
+	it('writes the node verify workflow when the JSON file has no userscript-publish entry', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${nodeVerifyWorkflowPath}`);
+		expect(readFileSync(join(project, nodeVerifyWorkflowPath), 'utf-8')).toBe(nodeVerifyTemplate);
+	});
+
+	it('skips the node verify workflow when the JSON file has a userscript-publish entry', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'userscript-publish': { with: { assets: 'dist/*.user.js' } } }),
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
+		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
+		expect(output).toContain(`wrote ${userscriptPublishWorkflowPath}`);
+	});
+
+	it('skips the node verify workflow when the target is utils itself', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: '@sapphire-sh/utils' }));
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
+		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
+		expect(output).toContain(`wrote ${nodeAuditFixWorkflowPath}`);
 	});
 
 	it('watches the name: of every other workflow template from the startup failure notify workflow', () => {
