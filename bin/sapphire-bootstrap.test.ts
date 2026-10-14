@@ -446,7 +446,6 @@ describe('sapphire-bootstrap', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
-		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'workflow-startup-failure-notify': {} }));
 		runBootstrap(project);
 
 		const output = runBootstrap(project);
@@ -558,6 +557,29 @@ describe('sapphire-bootstrap', () => {
 			nodeSharedConfigUpdateTemplate,
 		);
 		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
+	});
+
+	it('prints no warning on a second run when every caller has only the with: lines of its template', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		runBootstrap(project);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([]);
+	});
+
+	it('warns when an existing caller has a with: line besides the lines of its template', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, dirname(dockerPublishWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, dockerPublishWorkflowPath), `${dockerPublishTemplate}      platforms: 'linux/arm64'\n`);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([
+			`warning: ${dockerPublishWorkflowPath} had with: values that are not in ${workflowValuesPath}`,
+		]);
 	});
 
 	it('removes an obsolete utils update workflow from the target', () => {

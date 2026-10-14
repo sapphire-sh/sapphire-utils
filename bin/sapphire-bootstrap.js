@@ -20,7 +20,6 @@ const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const withLinePattern = /^\s*with:\s*$/m;
 const pathsIgnoreLinePattern = /^\s*paths-ignore:\s*$/m;
-const reviewersOnlyBlockPattern = /^\n {6}reviewers: .*\n$/;
 const pushBlockPattern = /^on:\n(?:[ \t].*\n|\n)*? {2}push:\n((?: {4}.*\n|\n)*)/m;
 const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
 const entryKeys = new Set(['push', 'with']);
@@ -120,25 +119,23 @@ const writeSectioned = (outputName, content) => {
 const formatYamlValue = (value) =>
 	typeof value === 'string' && value.includes("'") === false ? `'${value}'` : JSON.stringify(value);
 
+const readWithLines = (content) => {
+	const withLine = withLinePattern.exec(content);
+
+	return withLine === null
+		? []
+		: content
+				.slice(withLine.index + withLine[0].length)
+				.split('\n')
+				.filter((line) => line !== '');
+};
+
 const writeWorkflow = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const values = workflowValues[basename(outputName, '.yml')];
 	let content = template;
 
-	if (values === undefined) {
-		if (existsSync(filepath)) {
-			const existing = readFileSync(filepath, 'utf-8');
-			const withLine = withLinePattern.exec(existing);
-
-			if (
-				withLine !== null &&
-				(basename(outputName, '.yml') !== 'dependabot-review-request' ||
-					reviewersOnlyBlockPattern.test(existing.slice(withLine.index + withLine[0].length)) === false)
-			) {
-				console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
-			}
-		}
-	} else {
+	if (values !== undefined) {
 		const { push = {}, with: withValues } = values;
 
 		for (const [key, patterns] of Object.entries(push)) {
@@ -166,6 +163,14 @@ const writeWorkflow = (outputName, template) => {
 			}
 
 			content += `      reviewers: ${formatYamlValue(reviewers.join(' '))}\n`;
+		}
+	}
+
+	if (values === undefined && existsSync(filepath)) {
+		const contentWithLines = new Set(readWithLines(content));
+
+		if (readWithLines(readFileSync(filepath, 'utf-8')).some((line) => contentWithLines.has(line) === false) === true) {
+			console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
 		}
 	}
 
