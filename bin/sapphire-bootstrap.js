@@ -11,6 +11,7 @@ const END_MARKER = '# @sapphire-sh/utils:end';
 const selfPackageName = '@sapphire-sh/utils';
 const selfSkipped = new Set([
 	join('.github', 'workflows', 'node-shared-config-update.yml'),
+	join('.github', 'workflows', 'node-utils-update.yml'),
 	join('.github', 'workflows', 'node-verify.yml'),
 ]);
 const obsoleteFiles = new Set([

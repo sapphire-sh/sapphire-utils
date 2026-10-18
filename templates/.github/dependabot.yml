@@ -3,8 +3,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: cron
-      cronjob: '0 0 * * *'
+      interval: weekly
     groups:
       dependencies:
         patterns:
@@ -14,8 +13,9 @@ updates:
     cooldown:
       exclude:
         - '@sapphire-sh/utils'
+    ignore:
+      - dependency-name: '@sapphire-sh/utils'
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: cron
-      cronjob: '0 0 * * *'
+      interval: weekly

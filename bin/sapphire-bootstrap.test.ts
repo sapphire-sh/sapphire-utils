@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = fileURLToPath(new URL('sapphire-bootstrap.js', import.meta.url));
 const nodeSharedConfigUpdateWorkflowPath = join('.github', 'workflows', 'node-shared-config-update.yml');
+const nodeUtilsUpdateWorkflowPath = join('.github', 'workflows', 'node-utils-update.yml');
 const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml');
 const dependabotConfigPath = join('.github', 'dependabot.yml');
 const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.yml');
@@ -27,6 +28,10 @@ const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const codeOwnersPath = join('.github', 'CODEOWNERS');
 const nodeSharedConfigUpdateTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/node-shared-config-update.yml', import.meta.url)),
+	'utf-8',
+);
+const nodeUtilsUpdateTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/node-utils-update.yml', import.meta.url)),
 	'utf-8',
 );
 const dependabotTemplate = readFileSync(
@@ -118,6 +123,72 @@ describe('sapphire-bootstrap', () => {
 		expect(existsSync(join(project, nodeSharedConfigUpdateWorkflowPath))).toBe(false);
 	});
 
+	it('copies the daily node utils update workflow with manual dispatch, permissions and token', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${nodeUtilsUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(
+			[
+				'name: node-utils-update',
+				'',
+				'on:',
+				'  schedule:',
+				"    - cron: '0 0 * * *'",
+				'  workflow_dispatch:',
+				'',
+				'jobs:',
+				'  update:',
+				'    uses: sapphire-sh/github-actions/.github/workflows/node-utils-update-template.yml@main',
+				'    permissions:',
+				'      contents: write',
+				'      issues: write',
+				'      pull-requests: write',
+				'    secrets:',
+				'      PULL_REQUEST_TOKEN: ${{ secrets.PULL_REQUEST_TOKEN }}',
+				'',
+			].join('\n'),
+		);
+	});
+
+	it('overwrites an existing node utils update workflow with the template', () => {
+		const project = createProject();
+		mkdirSync(join(project, dirname(nodeUtilsUpdateWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'name: node-utils-update\n');
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${nodeUtilsUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(nodeUtilsUpdateTemplate);
+	});
+
+	it('skips the node utils update workflow when the target is utils itself', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: '@sapphire-sh/utils' }));
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${nodeUtilsUpdateWorkflowPath}`);
+		expect(existsSync(join(project, nodeUtilsUpdateWorkflowPath))).toBe(false);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
+	});
+
+	it('appends the node-utils-update with values from the workflow configuration', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'node-utils-update': { with: { run_tests: true, rebuild_packages: 'example-package' } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(
+			`${nodeUtilsUpdateTemplate}    with:\n      run_tests: true\n      rebuild_packages: 'example-package'\n`,
+		);
+	});
+
 	it('copies the dependabot config when the target does not have one', () => {
 		const project = createProject();
 
@@ -139,8 +210,7 @@ describe('sapphire-bootstrap', () => {
 				'  - package-ecosystem: npm',
 				'    directory: /',
 				'    schedule:',
-				'      interval: cron',
-				"      cronjob: '0 0 * * *'",
+				'      interval: weekly',
 				'    groups:',
 				'      dependencies:',
 				'        patterns:',
@@ -150,11 +220,12 @@ describe('sapphire-bootstrap', () => {
 				'    cooldown:',
 				'      exclude:',
 				"        - '@sapphire-sh/utils'",
+				'    ignore:',
+				"      - dependency-name: '@sapphire-sh/utils'",
 				'  - package-ecosystem: github-actions',
 				'    directory: /',
 				'    schedule:',
-				'      interval: cron',
-				"      cronjob: '0 0 * * *'",
+				'      interval: weekly',
 				'',
 			].join('\n'),
 		);
@@ -311,8 +382,7 @@ describe('sapphire-bootstrap', () => {
 				'  - package-ecosystem: npm',
 				'    directory: /',
 				'    schedule:',
-				'      interval: cron',
-				"      cronjob: '0 0 * * *'",
+				'      interval: weekly',
 				'    groups:',
 				'      dependencies:',
 				'        patterns:',
@@ -322,13 +392,14 @@ describe('sapphire-bootstrap', () => {
 				'    cooldown:',
 				'      exclude:',
 				"        - '@sapphire-sh/utils'",
+				'    ignore:',
+				"      - dependency-name: '@sapphire-sh/utils'",
 				'    assignees:',
 				"      - 'example-user'",
 				'  - package-ecosystem: github-actions',
 				'    directory: /',
 				'    schedule:',
-				'      interval: cron',
-				"      cronjob: '0 0 * * *'",
+				'      interval: weekly',
 				'    assignees:',
 				"      - 'example-user'",
 				'',
@@ -492,7 +563,11 @@ describe('sapphire-bootstrap', () => {
 
 		runBootstrap(project);
 
-		for (const workflowPath of [nodeSharedConfigUpdateWorkflowPath, nodeAuditFixWorkflowPath]) {
+		for (const workflowPath of [
+			nodeSharedConfigUpdateWorkflowPath,
+			nodeUtilsUpdateWorkflowPath,
+			nodeAuditFixWorkflowPath,
+		]) {
 			const content = readFileSync(join(project, workflowPath), 'utf-8');
 			expect(content.slice(-secretsBlock.length)).toBe(secretsBlock);
 		}
