@@ -116,6 +116,12 @@
 		"next": {
 			"optional": true
 		},
+		"prettier": {
+			"optional": true
+		},
+		"prettier-plugin-organize-imports": {
+			"optional": true
+		},
 		"typescript-eslint": {
 			"optional": true
 		},
