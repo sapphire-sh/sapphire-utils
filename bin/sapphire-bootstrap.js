@@ -23,7 +23,7 @@ const obsoleteFiles = new Set([
 const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const withLinePattern = /^\s*with:\s*$/m;
-const pathsIgnoreLinePattern = /^\s*paths-ignore:\s*$/m;
+const pushPathsIgnoreListPattern = /^( {2}push:\n(?: {4}.*\n)*?) {4}paths-ignore:\n((?: {6}- .*\n)*)/m;
 const pushBlockPattern = /^on:\n(?:[ \t].*\n|\n)*? {2}push:\n((?: {4}.*\n|\n)*)/m;
 const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
 const entryKeys = new Set(['push', 'with']);
@@ -135,6 +135,12 @@ const readWithLines = (content) => {
 				.filter((line) => line !== '');
 };
 
+const readPathsIgnoreLines = (content) => {
+	const pathsIgnoreList = pushPathsIgnoreListPattern.exec(content);
+
+	return pathsIgnoreList === null ? [] : pathsIgnoreList[2].split('\n').filter((line) => line !== '');
+};
+
 const writeWorkflow = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const values = workflowValues[basename(outputName, '.yml')];
@@ -142,6 +148,10 @@ const writeWorkflow = (outputName, template) => {
 
 	if (values !== undefined) {
 		const { push = {}, with: withValues } = values;
+
+		if (Object.keys(push).length > 0) {
+			content = content.replace(pushPathsIgnoreListPattern, '$1');
+		}
 
 		for (const [key, patterns] of Object.entries(push)) {
 			const patternLines = patterns.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
@@ -179,12 +189,14 @@ const writeWorkflow = (outputName, template) => {
 		}
 	}
 
-	if (
-		(values?.push === undefined || Object.hasOwn(values.push, 'paths-ignore') === false) &&
-		existsSync(filepath) &&
-		pathsIgnoreLinePattern.test(readFileSync(filepath, 'utf-8'))
-	) {
-		console.log(`warning: ${outputName} had paths-ignore values that are not in ${workflowValuesPath}`);
+	if (existsSync(filepath)) {
+		const contentPathsIgnoreLines = new Set(readPathsIgnoreLines(content));
+
+		if (
+			readPathsIgnoreLines(readFileSync(filepath, 'utf-8')).some((line) => contentPathsIgnoreLines.has(line) === false)
+		) {
+			console.log(`warning: ${outputName} had paths-ignore values that are not in ${workflowValuesPath}`);
+		}
 	}
 
 	mkdirSync(dirname(filepath), { recursive: true });

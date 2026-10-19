@@ -737,7 +737,7 @@ describe('sapphire-bootstrap', () => {
 
 		const content = readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8');
 		expect(content.slice(0, content.indexOf('\nconcurrency:'))).toBe(
-			'name: Build and Push Docker Image\n\non:\n  push:\n    branches:\n      - main\n  pull_request:\n',
+			"name: Build and Push Docker Image\n\non:\n  push:\n    branches:\n      - main\n    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n  pull_request:\n",
 		);
 	});
 
@@ -811,8 +811,8 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
 			`${dockerPublishTemplate.replace(
-				'    branches:\n      - main\n',
-				"    branches:\n      - main\n    paths-ignore:\n      - '**/*.md'\n      - 'example/**'\n",
+				"    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n",
+				"    paths-ignore:\n      - '**/*.md'\n      - 'example/**'\n",
 			)}      platforms: 'linux/arm64'\n`,
 		);
 	});
@@ -830,10 +830,115 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
 			dockerPublishTemplate.replace(
-				'    branches:\n      - main\n',
-				"    branches:\n      - main\n    paths:\n      - 'src/**'\n",
+				"    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n",
+				"    paths:\n      - 'src/**'\n",
 			),
 		);
+	});
+
+	it('writes the default paths-ignore list after the branches list when the target has only a Dockerfile', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			[
+				'name: Build and Push Docker Image',
+				'',
+				'on:',
+				'  push:',
+				'    branches:',
+				'      - main',
+				'    paths-ignore:',
+				"      - '.github/**'",
+				"      - '**/*.md'",
+				"      - '.vscode/**'",
+				'  pull_request:',
+				'',
+				'concurrency:',
+				'  group: ${{ github.workflow }}-${{ github.ref }}',
+				'  cancel-in-progress: true',
+				'',
+				'jobs:',
+				'  call-shared-ci:',
+				'    uses: sapphire-sh/github-actions/.github/workflows/docker-publish-template.yml@main',
+				'    permissions:',
+				'      actions: read',
+				'      contents: read',
+				'    secrets: inherit',
+				'    with:',
+				'      image_name: ${{ github.event.repository.name }}',
+				'',
+			].join('\n'),
+		);
+	});
+
+	it('replaces the default paths-ignore list with the docker-publish push.paths-ignore values', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { push: { 'paths-ignore': ['example/**'] } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			dockerPublishTemplate.replace(
+				"    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n",
+				"    paths-ignore:\n      - 'example/**'\n",
+			),
+		);
+	});
+
+	it('replaces the default paths-ignore list with the docker-publish push.paths values', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { push: { paths: ['src/**'] } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8')).toBe(
+			dockerPublishTemplate.replace(
+				"    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n",
+				"    paths:\n      - 'src/**'\n",
+			),
+		);
+	});
+
+	it('prints no warning on a second run when the docker publish caller has the default paths-ignore list', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		runBootstrap(project);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([]);
+	});
+
+	it('warns when an existing docker publish caller has a paths-ignore list other than the default', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, dirname(dockerPublishWorkflowPath)), { recursive: true });
+		writeFileSync(
+			join(project, dockerPublishWorkflowPath),
+			dockerPublishTemplate.replace(
+				"    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n",
+				"    paths-ignore:\n      - 'src/**'\n",
+			),
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([
+			`warning: ${dockerPublishWorkflowPath} had paths-ignore values that are not in ${workflowValuesPath}`,
+		]);
 	});
 
 	it('exits with an error when an entry has a key other than push and with', () => {
