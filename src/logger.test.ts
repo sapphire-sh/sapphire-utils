@@ -125,6 +125,28 @@ describe('logger', () => {
 		);
 	});
 
+	it('serializes an own enumerable property of an Error', () => {
+		const error = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+		logger.error('with code', error);
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({ error: 'connect ECONNREFUSED', name: 'Error', stack: error.stack, code: 'ECONNREFUSED' }),
+		);
+	});
+
+	it('serializes an own enumerable property of an Error cause', () => {
+		const cause = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+		const error = new TypeError('fetch failed', { cause });
+		logger.error('with code', error);
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({
+				error: 'fetch failed',
+				name: 'TypeError',
+				stack: error.stack,
+				cause: { error: 'connect ECONNREFUSED', name: 'Error', stack: cause.stack, code: 'ECONNREFUSED' },
+			}),
+		);
+	});
+
 	it('serializes a string payload', () => {
 		logger.info('with string', 'text');
 		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('"text"');

@@ -25,11 +25,14 @@ const sinks: LogSink[] = [];
 const stringify = (value: unknown): string | undefined => JSON.stringify(value);
 
 interface SerializedError {
+	[key: string]: unknown;
 	error: string;
 	name: string;
 	stack?: string;
 	cause?: unknown;
 }
+
+const SERIALIZED_ERROR_KEYS = new Set(['error', 'name', 'stack', 'cause']);
 
 const serializeCause = (cause: unknown, path: readonly Error[]): unknown => {
 	if (!(cause instanceof Error)) {
@@ -43,6 +46,7 @@ const serializeError = (error: Error, ancestors: readonly Error[] = []): Seriali
 	name: error.name,
 	stack: error.stack,
 	cause: serializeCause(error.cause, [...ancestors, error]),
+	...Object.fromEntries(Object.entries(error).filter(([key]) => !SERIALIZED_ERROR_KEYS.has(key))),
 });
 
 const serializePayload = (payload: Payload): string => {
