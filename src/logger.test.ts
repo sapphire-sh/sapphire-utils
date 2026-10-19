@@ -175,6 +175,22 @@ describe('logger', () => {
 		}).not.toThrow();
 		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('"[symbol]"');
 	});
+
+	it('renders a circular payload as [unserializable] instead of throwing', () => {
+		const payload: Record<string, unknown> = {};
+		payload.self = payload;
+		expect(() => {
+			logger.info('with circular payload', payload);
+		}).not.toThrow();
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('with circular payload "[unserializable]"');
+	});
+
+	it('renders a BigInt payload as [unserializable] instead of throwing', () => {
+		expect(() => {
+			logger.info('with BigInt payload', { count: 1n });
+		}).not.toThrow();
+		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('with BigInt payload "[unserializable]"');
+	});
 });
 
 describe('logger sinks', () => {

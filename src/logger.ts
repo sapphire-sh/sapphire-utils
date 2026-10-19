@@ -21,7 +21,7 @@ export type LogSink = (entry: LogEntry) => void;
 const sinks: LogSink[] = [];
 
 // JSON.stringify is typed as returning string, but returns undefined for values it cannot
-// serialize, such as functions and symbols.
+// serialize, such as functions and symbols, and throws on circular structures and BigInt values.
 const stringify = (value: unknown): string | undefined => JSON.stringify(value);
 
 interface SerializedError {
@@ -50,7 +50,12 @@ const serializeError = (error: Error, ancestors: readonly Error[] = []): Seriali
 });
 
 const serializePayload = (payload: Payload): string => {
-	const serialized = stringify(payload instanceof Error ? serializeError(payload) : payload);
+	let serialized: string | undefined;
+	try {
+		serialized = stringify(payload instanceof Error ? serializeError(payload) : payload);
+	} catch {
+		serialized = '"[unserializable]"';
+	}
 	const json = serialized ?? `"[${typeof payload}]"`;
 	return json.padStart(json.length + 1);
 };
