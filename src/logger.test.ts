@@ -70,8 +70,31 @@ describe('logger', () => {
 	it('serializes Error payloads', () => {
 		const err = new Error('boom');
 		logger.error('with error', err);
-		const output = String(vi.mocked(console.error).mock.calls[0][0]);
-		expect(output).toContain('boom');
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({ error: 'boom', name: 'Error', stack: err.stack }),
+		);
+	});
+
+	it('serializes an Error cause with the same shape', () => {
+		const cause = new Error('connect ECONNREFUSED');
+		const error = new TypeError('fetch failed', { cause });
+		logger.error('with cause', error);
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({
+				error: 'fetch failed',
+				name: 'TypeError',
+				stack: error.stack,
+				cause: { error: 'connect ECONNREFUSED', name: 'Error', stack: cause.stack },
+			}),
+		);
+	});
+
+	it('serializes a non-Error cause as is', () => {
+		const error = new Error('boom', { cause: { code: 'ECONNREFUSED' } });
+		logger.error('with cause', error);
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({ error: 'boom', name: 'Error', stack: error.stack, cause: { code: 'ECONNREFUSED' } }),
+		);
 	});
 
 	it('serializes a string payload', () => {

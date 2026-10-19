@@ -24,10 +24,22 @@ const sinks: LogSink[] = [];
 // serialize, such as functions and symbols.
 const stringify = (value: unknown): string | undefined => JSON.stringify(value);
 
+interface SerializedError {
+	error: string;
+	name: string;
+	stack?: string;
+	cause?: unknown;
+}
+
+const serializeError = (error: Error): SerializedError => ({
+	error: error.message,
+	name: error.name,
+	stack: error.stack,
+	cause: error.cause instanceof Error ? serializeError(error.cause) : error.cause,
+});
+
 const serializePayload = (payload: Payload): string => {
-	const serialized = stringify(
-		payload instanceof Error ? { error: payload.message, name: payload.name, stack: payload.stack } : payload,
-	);
+	const serialized = stringify(payload instanceof Error ? serializeError(payload) : payload);
 	const json = serialized ?? `"[${typeof payload}]"`;
 	return json.padStart(json.length + 1);
 };
