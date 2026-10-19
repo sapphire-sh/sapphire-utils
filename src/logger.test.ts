@@ -97,6 +97,34 @@ describe('logger', () => {
 		);
 	});
 
+	it('renders an Error that is its own cause as [circular]', () => {
+		const error = new Error('loop');
+		error.cause = error;
+		expect(() => {
+			logger.error('with circular cause', error);
+		}).not.toThrow();
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({ error: 'loop', name: 'Error', stack: error.stack, cause: '[circular]' }),
+		);
+	});
+
+	it('renders an ancestor Error cause as [circular]', () => {
+		const outer = new Error('outer');
+		const inner = new Error('inner', { cause: outer });
+		outer.cause = inner;
+		expect(() => {
+			logger.error('with circular cause', outer);
+		}).not.toThrow();
+		expect(String(vi.mocked(console.error).mock.calls[0][0])).toContain(
+			JSON.stringify({
+				error: 'outer',
+				name: 'Error',
+				stack: outer.stack,
+				cause: { error: 'inner', name: 'Error', stack: inner.stack, cause: '[circular]' },
+			}),
+		);
+	});
+
 	it('serializes a string payload', () => {
 		logger.info('with string', 'text');
 		expect(String(vi.mocked(console.log).mock.calls[0][0])).toContain('"text"');

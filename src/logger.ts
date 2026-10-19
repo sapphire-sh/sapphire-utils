@@ -31,11 +31,18 @@ interface SerializedError {
 	cause?: unknown;
 }
 
-const serializeError = (error: Error): SerializedError => ({
+const serializeCause = (cause: unknown, path: readonly Error[]): unknown => {
+	if (!(cause instanceof Error)) {
+		return cause;
+	}
+	return path.includes(cause) ? '[circular]' : serializeError(cause, path);
+};
+
+const serializeError = (error: Error, ancestors: readonly Error[] = []): SerializedError => ({
 	error: error.message,
 	name: error.name,
 	stack: error.stack,
-	cause: error.cause instanceof Error ? serializeError(error.cause) : error.cause,
+	cause: serializeCause(error.cause, [...ancestors, error]),
 });
 
 const serializePayload = (payload: Payload): string => {
