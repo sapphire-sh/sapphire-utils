@@ -261,6 +261,55 @@ const writeDependabotConfig = (outputName, template) => {
 	console.log(`wrote ${outputName}`);
 };
 
+const selfManifestPath = join(fileURLToPath(import.meta.url), '..', '..', 'package.json');
+const prettierConfigNames = ['prettier.config.js', 'prettier.config.mjs', 'prettier.config.cjs', 'prettier.config.ts'];
+const prettierPackageNames = ['prettier', 'prettier-plugin-organize-imports'];
+
+const writePrettierDependencies = () => {
+	const filepath = join(cwd, 'package.json');
+
+	if (existsSync(filepath) === false) {
+		return;
+	}
+
+	const usesSharedConfig = prettierConfigNames.some((name) => {
+		const configPath = join(cwd, name);
+		return existsSync(configPath) && readFileSync(configPath, 'utf-8').includes('@sapphire-sh/utils/prettier');
+	});
+
+	if (usesSharedConfig === false) {
+		return;
+	}
+
+	const existing = readFileSync(filepath, 'utf-8');
+	const manifest = JSON.parse(existing);
+	const missingNames = prettierPackageNames.filter(
+		(name) =>
+			Object.hasOwn(manifest.dependencies ?? {}, name) === false &&
+			Object.hasOwn(manifest.devDependencies ?? {}, name) === false,
+	);
+
+	if (missingNames.length === 0) {
+		return;
+	}
+
+	const { devDependencies: selfDevDependencies } = JSON.parse(readFileSync(selfManifestPath, 'utf-8'));
+	const devDependencies = { ...manifest.devDependencies };
+
+	for (const name of missingNames) {
+		devDependencies[name] = selfDevDependencies[name];
+	}
+
+	manifest.devDependencies = Object.fromEntries(
+		Object.keys(devDependencies)
+			.toSorted()
+			.map((name) => [name, devDependencies[name]]),
+	);
+	const indent = /^[ \t]+/m.exec(existing)?.[0] ?? '\t';
+	writeFileSync(filepath, `${JSON.stringify(manifest, null, indent)}\n`);
+	console.log('wrote package.json');
+};
+
 const collectTemplates = (directory, prefix) => {
 	const relativePaths = [];
 
@@ -374,3 +423,5 @@ for (const relativePath of obsoleteFiles) {
 		console.log(`removed ${relativePath}`);
 	}
 }
+
+writePrettierDependencies();

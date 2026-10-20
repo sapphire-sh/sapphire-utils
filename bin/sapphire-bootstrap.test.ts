@@ -68,6 +68,9 @@ const prettierignoreTemplate = readFileSync(
 	'utf-8',
 );
 const prettierignoreSection = `# @sapphire-sh/utils:start\n${prettierignoreTemplate}# @sapphire-sh/utils:end`;
+const { devDependencies: utilsDevDependencies }: { devDependencies: Record<string, string> } = JSON.parse(
+	readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf-8'),
+);
 
 const projects: string[] = [];
 
@@ -1204,6 +1207,96 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, '.prettierignore'), 'utf-8')).toBe(
 			`${prettierignoreSection}\n\nmigrations/meta\n`,
+		);
+	});
+
+	it('adds prettier and its plugin to devDependencies when the target uses the shared prettier config', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'prettier.config.js'), "export { default } from '@sapphire-sh/utils/prettier';\n");
+		writeFileSync(
+			join(project, 'package.json'),
+			`${JSON.stringify({ name: 'example', devDependencies: { eslint: '^10.0.0' } }, null, 2)}\n`,
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain('wrote package.json');
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(
+			`${JSON.stringify(
+				{
+					name: 'example',
+					devDependencies: {
+						eslint: '^10.0.0',
+						prettier: utilsDevDependencies.prettier,
+						'prettier-plugin-organize-imports': utilsDevDependencies['prettier-plugin-organize-imports'],
+					},
+				},
+				null,
+				2,
+			)}\n`,
+		);
+	});
+
+	it('adds only the missing prettier plugin to devDependencies', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'prettier.config.js'), "export { default } from '@sapphire-sh/utils/prettier';\n");
+		writeFileSync(
+			join(project, 'package.json'),
+			`${JSON.stringify({ name: 'example', devDependencies: { eslint: '^10.0.0', prettier: '^3.0.0' } }, null, 2)}\n`,
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(
+			`${JSON.stringify(
+				{
+					name: 'example',
+					devDependencies: {
+						eslint: '^10.0.0',
+						prettier: '^3.0.0',
+						'prettier-plugin-organize-imports': utilsDevDependencies['prettier-plugin-organize-imports'],
+					},
+				},
+				null,
+				2,
+			)}\n`,
+		);
+	});
+
+	it('leaves package.json unchanged when the target does not use the shared prettier config', () => {
+		const project = createProject();
+		const existing = `${JSON.stringify({ name: 'example', devDependencies: { eslint: '^10.0.0' } }, null, 2)}\n`;
+		writeFileSync(join(project, 'package.json'), existing);
+
+		const output = runBootstrap(project);
+
+		expect(output).not.toContain('wrote package.json');
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(existing);
+	});
+
+	it('keeps the tab indentation of package.json when it adds devDependencies', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'prettier.config.js'), "export { default } from '@sapphire-sh/utils/prettier';\n");
+		writeFileSync(
+			join(project, 'package.json'),
+			`${JSON.stringify({ name: 'example', devDependencies: { eslint: '^10.0.0' } }, null, '\t')}\n`,
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(
+			`${JSON.stringify(
+				{
+					name: 'example',
+					devDependencies: {
+						eslint: '^10.0.0',
+						prettier: utilsDevDependencies.prettier,
+						'prettier-plugin-organize-imports': utilsDevDependencies['prettier-plugin-organize-imports'],
+					},
+				},
+				null,
+				'\t',
+			)}\n`,
 		);
 	});
 });
