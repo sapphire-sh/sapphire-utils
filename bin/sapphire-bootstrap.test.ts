@@ -551,6 +551,64 @@ describe('sapphire-bootstrap', () => {
 		]);
 	});
 
+	it('writes the callers that open pull requests unchanged when the target has no CODEOWNERS', () => {
+		const project = createProject();
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			nodeSharedConfigUpdateTemplate,
+		);
+		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(nodeUtilsUpdateTemplate);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
+	});
+
+	it('passes the CODEOWNERS default owner as the assignee of the callers that open pull requests', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toBe(
+			`${nodeSharedConfigUpdateTemplate}    with:\n      assignee: 'example-user'\n`,
+		);
+		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(
+			`${nodeUtilsUpdateTemplate}    with:\n      assignee: 'example-user'\n`,
+		);
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(
+			`${nodeAuditFixTemplate}    with:\n      assignee: 'example-user'\n`,
+		);
+	});
+
+	it('joins the users on the last CODEOWNERS * line with a space as the assignee value', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @first-user @second-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(
+			`${nodeAuditFixTemplate}    with:\n      assignee: 'first-user second-user'\n`,
+		);
+	});
+
+	it('writes the assignee line after the node-audit-fix values from .github/sapphire-workflows.json', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'node-audit-fix': { with: { run_tests: true } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(
+			`${nodeAuditFixTemplate}    with:\n      run_tests: true\n      assignee: 'example-user'\n`,
+		);
+	});
+
 	it('copies the node audit fix workflow when the target does not have one', () => {
 		const project = createProject();
 

@@ -31,6 +31,7 @@ const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
 const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')]);
 const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), 'userscript-publish']]);
+const pullRequestWorkflows = new Set(['node-shared-config-update', 'node-utils-update', 'node-audit-fix']);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
@@ -178,6 +179,18 @@ const writeWorkflow = (outputName, template) => {
 			}
 
 			content += `      reviewers: ${formatYamlValue(reviewers.join(' '))}\n`;
+		}
+	}
+
+	if (pullRequestWorkflows.has(basename(outputName, '.yml'))) {
+		const assignees = readCodeOwnerUsers();
+
+		if (assignees.length > 0) {
+			if (withLinePattern.test(content) === false) {
+				content += '    with:\n';
+			}
+
+			content += `      assignee: ${formatYamlValue(assignees.join(' '))}\n`;
 		}
 	}
 
