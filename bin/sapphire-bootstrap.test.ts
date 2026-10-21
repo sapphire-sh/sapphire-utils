@@ -100,6 +100,25 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it('triggers the node shared config update workflow on package.json pushes to main', () => {
+		const project = createProject();
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeSharedConfigUpdateWorkflowPath), 'utf-8')).toContain(
+			[
+				'on:',
+				'  push:',
+				'    branches:',
+				'      - main',
+				'    paths:',
+				'      - package.json',
+				'  workflow_dispatch:',
+				'',
+			].join('\n'),
+		);
+	});
+
 	it('overwrites an existing node shared config update workflow with the template', () => {
 		const project = createProject();
 		const existing =
