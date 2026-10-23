@@ -1031,8 +1031,8 @@ describe('sapphire-bootstrap', () => {
 
 		expect(result.status).toBe(1);
 		expect(result.stderr).toBe(`error: ${workflowValuesPath} docker-publish has unknown key run_tests\n`);
-		expect(readdirSync(project, { recursive: true }).toSorted()).toEqual(
-			['.github', workflowValuesPath, 'Dockerfile'].toSorted(),
+		expect(readdirSync(project, { recursive: true }).toSorted((a, b) => (a < b ? -1 : Number(a > b)))).toEqual(
+			['.github', workflowValuesPath, 'Dockerfile'].toSorted((a, b) => (a < b ? -1 : Number(a > b))),
 		);
 	});
 
@@ -1261,7 +1261,9 @@ describe('sapphire-bootstrap', () => {
 			.filter((line) => line !== '')
 			.map((line) => line.slice('      - '.length));
 
-		expect(watchedNames.toSorted()).toEqual(otherNames.toSorted());
+		expect(watchedNames.toSorted((a, b) => (a < b ? -1 : Number(a > b)))).toEqual(
+			otherNames.toSorted((a, b) => (String(a) < String(b) ? -1 : Number(String(a) > String(b)))),
+		);
 	});
 
 	it('replaces only the marked section of an existing .prettierignore', () => {
