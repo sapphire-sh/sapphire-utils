@@ -22,7 +22,7 @@ export const noControlCharacters: Rule.RuleModule = {
 				const text = sourceCode.getText();
 				for (const match of text.matchAll(CONTROL_CHARACTER_PATTERN)) {
 					const { index } = match;
-					const code = match[0].charCodeAt(0).toString(16).padStart(4, '0').toUpperCase();
+					const code = (match[0].codePointAt(0) ?? 0).toString(16).padStart(4, '0').toUpperCase();
 					context.report({
 						node,
 						loc: {
