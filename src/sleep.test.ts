@@ -30,11 +30,19 @@ describe('sleep', () => {
 	});
 
 	it('accepts a jitter parameter', async () => {
-		// With jitter=0, delay is exactly ms
-		vi.spyOn(Math, 'random').mockReturnValue(0);
-		const promise = sleep(200, 100);
-		vi.advanceTimersByTime(200);
+		// A Math.random of 0.5 adds half of the 100ms jitter to the 200ms delay.
+		vi.spyOn(Math, 'random').mockReturnValue(0.5);
+		let resolved = false;
+		const promise = (async () => {
+			await sleep(200, 100);
+			resolved = true;
+		})();
+
+		await vi.advanceTimersByTimeAsync(249);
+		expect(resolved).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
 		await promise;
+		expect(resolved).toBe(true);
 		vi.mocked(Math.random).mockRestore();
 	});
 });

@@ -72,39 +72,43 @@ const ruleTester = new RuleTester({
 
 describe('prefer-read-env', () => {
 	it('reports fallback operators on process.env', () => {
-		ruleTester.run('prefer-read-env', preferReadEnv, {
-			valid: [],
-			invalid: [
-				{
-					code: "const value = process.env.LOG_LEVEL ?? 'info';",
-					errors: [{ messageId: 'preferReadEnv' }],
-				},
-				{
-					code: "const value = process.env.LOG_LEVEL || 'info';",
-					errors: [{ messageId: 'preferReadEnv' }],
-				},
-				{
-					code: "const value = process.env['LOG_LEVEL'] ?? 'info';",
-					errors: [{ messageId: 'preferReadEnv' }],
-				},
-				{
-					code: "const value = process.env[name] ?? 'info';",
-					errors: [{ messageId: 'preferReadEnv' }],
-				},
-			],
-		});
+		expect(() =>
+			ruleTester.run('prefer-read-env', preferReadEnv, {
+				valid: [],
+				invalid: [
+					{
+						code: "const value = process.env.LOG_LEVEL ?? 'info';",
+						errors: [{ messageId: 'preferReadEnv' }],
+					},
+					{
+						code: "const value = process.env.LOG_LEVEL || 'info';",
+						errors: [{ messageId: 'preferReadEnv' }],
+					},
+					{
+						code: "const value = process.env['LOG_LEVEL'] ?? 'info';",
+						errors: [{ messageId: 'preferReadEnv' }],
+					},
+					{
+						code: "const value = process.env[name] ?? 'info';",
+						errors: [{ messageId: 'preferReadEnv' }],
+					},
+				],
+			}),
+		).not.toThrow();
 	});
 
 	it('allows readEnv and explicit comparisons', () => {
-		ruleTester.run('prefer-read-env', preferReadEnv, {
-			valid: [
-				"const value = readEnv('LOG_LEVEL') ?? 'info';",
-				"const value = process.env.LOG_LEVEL === undefined ? 'info' : process.env.LOG_LEVEL;",
-				"const raw = process.env[name];\nconst value = raw === undefined || raw === '' ? undefined : raw;",
-				"const value = config.env.LOG_LEVEL ?? 'info';",
-				"const value = other ?? 'info';",
-			],
-			invalid: [],
-		});
+		expect(() =>
+			ruleTester.run('prefer-read-env', preferReadEnv, {
+				valid: [
+					"const value = readEnv('LOG_LEVEL') ?? 'info';",
+					"const value = process.env.LOG_LEVEL === undefined ? 'info' : process.env.LOG_LEVEL;",
+					"const raw = process.env[name];\nconst value = raw === undefined || raw === '' ? undefined : raw;",
+					"const value = config.env.LOG_LEVEL ?? 'info';",
+					"const value = other ?? 'info';",
+				],
+				invalid: [],
+			}),
+		).not.toThrow();
 	});
 });
