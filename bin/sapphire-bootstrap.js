@@ -258,7 +258,7 @@ const writeDependabotConfig = (outputName, template) => {
 
 	if (manifestDirectories.length > 0) {
 		const directoryLines = ['/', ...manifestDirectories]
-			.toSorted()
+			.toSorted((a, b) => (a < b ? -1 : Number(a > b)))
 			.map((directory) => `      - ${formatYamlValue(directory)}\n`)
 			.join('');
 		content = template.replace(
@@ -325,7 +325,7 @@ const writePrettierDependencies = () => {
 
 	manifest.devDependencies = Object.fromEntries(
 		Object.keys(devDependencies)
-			.toSorted()
+			.toSorted((a, b) => (a < b ? -1 : Number(a > b)))
 			.map((name) => [name, devDependencies[name]]),
 	);
 	const indent = /^[ \t]+/m.exec(existing)?.[0] ?? '\t';
