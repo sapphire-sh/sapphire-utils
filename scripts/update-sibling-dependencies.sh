@@ -40,7 +40,7 @@ find "$PARENT_DIR" -maxdepth 3 -name package.json -not -path '*/node_modules/*' 
       echo "$label: $current → $LATEST"
       if ! $DRY_RUN; then
         sed -i '' "s|\"$PACKAGE\": *\"[^\"]*\"|\"$PACKAGE\": \"^$LATEST\"|" "$pkg"
-        (cd "$dir" && npm install --no-audit --no-fund 2>&1 | tail -1) || echo "$label: npm install failed (manual fix needed)"
+        (cd "$dir" && npm install --no-audit --no-fund --ignore-scripts 2>&1 | tail -1) || echo "$label: npm install failed (manual fix needed)"
         grep -q '"bootstrap"' "$pkg" && (cd "$dir" && npm run bootstrap 2>&1 | tail -1)
       fi
     fi
