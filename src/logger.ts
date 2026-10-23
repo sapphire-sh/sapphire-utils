@@ -7,8 +7,6 @@ export enum LogLevel {
 	ERROR,
 }
 
-type Payload = unknown;
-
 export interface LogEntry {
 	level: LogLevel;
 	message: string;
@@ -49,7 +47,7 @@ const serializeError = (error: Error, ancestors: readonly Error[] = []): Seriali
 	...Object.fromEntries(Object.entries(error).filter(([key]) => !SERIALIZED_ERROR_KEYS.has(key))),
 });
 
-const serializePayload = (payload: Payload): string => {
+const serializePayload = (payload: unknown): string => {
 	let serialized: string | undefined;
 	try {
 		serialized = stringify(payload instanceof Error ? serializeError(payload) : payload);
@@ -79,7 +77,7 @@ const resolveInitialLevel = (): LogLevel => {
 
 let currentLevel: LogLevel = resolveInitialLevel();
 
-const log = (level: LogLevel, message: string, payload?: Payload) => {
+const log = (level: LogLevel, message: string, payload?: unknown) => {
 	if (level < currentLevel) {
 		return;
 	}
@@ -109,10 +107,10 @@ const log = (level: LogLevel, message: string, payload?: Payload) => {
 };
 
 export const logger = {
-	debug: (message: string, payload?: Payload) => log(LogLevel.DEBUG, message, payload),
-	info: (message: string, payload?: Payload) => log(LogLevel.INFO, message, payload),
-	warn: (message: string, payload?: Payload) => log(LogLevel.WARN, message, payload),
-	error: (message: string, payload?: Payload) => log(LogLevel.ERROR, message, payload),
+	debug: (message: string, payload?: unknown) => log(LogLevel.DEBUG, message, payload),
+	info: (message: string, payload?: unknown) => log(LogLevel.INFO, message, payload),
+	warn: (message: string, payload?: unknown) => log(LogLevel.WARN, message, payload),
+	error: (message: string, payload?: unknown) => log(LogLevel.ERROR, message, payload),
 	addSink: (sink: LogSink): (() => void) => {
 		sinks.push(sink);
 		return () => {
