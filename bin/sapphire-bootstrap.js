@@ -22,7 +22,7 @@ const obsoleteFiles = new Set([
 
 const workflowsDir = join('.github', 'workflows');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
-const withLinePattern = /^\s*with:\s*$/m;
+const withLinePattern = /^[ \t]*with:[ \t\r]*$/m;
 const pushPathsIgnoreListPattern = /^( {2}push:\n(?: {4}.*\n)*?) {4}paths-ignore:\n((?: {6}- .*\n)*)/m;
 const pushBlockPattern = /^on:\n(?:[ \t].*\n|\n)*? {2}push:\n((?: {4}.*\n|\n)*)/m;
 const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;

@@ -719,6 +719,21 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, nodeAuditFixWorkflowPath), 'utf-8')).toBe(nodeAuditFixTemplate);
 	});
 
+	it('warns when an existing caller saved with CRLF line endings has with: values the JSON file lacks', () => {
+		const project = createProject();
+		mkdirSync(join(project, dirname(nodeSharedConfigUpdateWorkflowPath)), { recursive: true });
+		writeFileSync(
+			join(project, nodeSharedConfigUpdateWorkflowPath),
+			'name: node-shared-config-update\r\n\r\njobs:\r\n  update:\r\n    with:\r\n      rebuild_packages: example-package\r\n',
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output.split('\n').filter((line) => line.startsWith('warning: '))).toEqual([
+			`warning: ${nodeSharedConfigUpdateWorkflowPath} had with: values that are not in ${workflowValuesPath}`,
+		]);
+	});
+
 	it('prints no warning on a second run when every caller has only the with: lines of its template', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
