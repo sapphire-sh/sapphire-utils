@@ -142,108 +142,118 @@ const readPathsIgnoreLines = (content) => {
 	return pathsIgnoreList === null ? [] : pathsIgnoreList[2].split('\n').filter((line) => line !== '');
 };
 
-const writeWorkflow = (outputName, template) => {
-	const filepath = join(cwd, outputName);
-	const values = workflowValues[basename(outputName, '.yml')];
+const appendWithLines = (content, entries) => {
+	const withLine = withLinePattern.test(content) ? '' : '    with:\n';
+	const valueLines = entries.map(([key, value]) => `      ${key}: ${formatYamlValue(value)}\n`).join('');
+
+	return `${content}${withLine}${valueLines}`;
+};
+
+const applyWorkflowValues = (template, values) => {
+	const { push = {}, with: withValues } = values;
 	let content = template;
 
-	if (values !== undefined) {
-		const { push = {}, with: withValues } = values;
-
-		if (Object.keys(push).length > 0) {
-			content = content.replace(pushPathsIgnoreListPattern, '$1');
-		}
-
-		for (const [key, patterns] of Object.entries(push)) {
-			const patternLines = patterns.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
-			content = content.replace(branchesListPattern, (branchesList) => `${branchesList}    ${key}:\n${patternLines}`);
-		}
-
-		if (withValues !== undefined) {
-			if (withLinePattern.test(template) === false) {
-				content += '    with:\n';
-			}
-
-			for (const [key, value] of Object.entries(withValues)) {
-				content += `      ${key}: ${formatYamlValue(value)}\n`;
-			}
-		}
+	if (Object.keys(push).length > 0) {
+		content = content.replace(pushPathsIgnoreListPattern, '$1');
 	}
 
-	if (basename(outputName, '.yml') === 'dependabot-review-request') {
+	for (const [key, patterns] of Object.entries(push)) {
+		const patternLines = patterns.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
+		content = content.replace(branchesListPattern, (branchesList) => `${branchesList}    ${key}:\n${patternLines}`);
+	}
+
+	return withValues === undefined ? content : appendWithLines(content, Object.entries(withValues));
+};
+
+const warnUnlistedCallerValues = (outputName, content, hasValues) => {
+	const filepath = join(cwd, outputName);
+
+	if (existsSync(filepath) === false) {
+		return;
+	}
+
+	const existing = readFileSync(filepath, 'utf-8');
+	const contentWithLines = new Set(readWithLines(content));
+	const contentPathsIgnoreLines = new Set(readPathsIgnoreLines(content));
+
+	if (hasValues === false && readWithLines(existing).some((line) => contentWithLines.has(line) === false) === true) {
+		console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
+	}
+
+	if (readPathsIgnoreLines(existing).some((line) => contentPathsIgnoreLines.has(line) === false)) {
+		console.log(`warning: ${outputName} had paths-ignore values that are not in ${workflowValuesPath}`);
+	}
+};
+
+const writeWorkflow = (outputName, template) => {
+	const filepath = join(cwd, outputName);
+	const name = basename(outputName, '.yml');
+	const values = workflowValues[name];
+	let content = values === undefined ? template : applyWorkflowValues(template, values);
+
+	if (name === 'dependabot-review-request') {
 		const reviewers = readCodeOwnerUsers();
 
 		if (reviewers.length > 0) {
-			if (withLinePattern.test(content) === false) {
-				content += '    with:\n';
-			}
-
-			content += `      reviewers: ${formatYamlValue(reviewers.join(' '))}\n`;
+			content = appendWithLines(content, [['reviewers', reviewers.join(' ')]]);
 		}
 	}
 
-	if (pullRequestWorkflows.has(basename(outputName, '.yml'))) {
+	if (pullRequestWorkflows.has(name)) {
 		const assignees = readCodeOwnerUsers();
 
 		if (assignees.length > 0) {
-			if (withLinePattern.test(content) === false) {
-				content += '    with:\n';
-			}
-
-			content += `      assignee: ${formatYamlValue(assignees.join(' '))}\n`;
+			content = appendWithLines(content, [['assignee', assignees.join(' ')]]);
 		}
 	}
 
-	if (values === undefined && existsSync(filepath)) {
-		const contentWithLines = new Set(readWithLines(content));
-
-		if (readWithLines(readFileSync(filepath, 'utf-8')).some((line) => contentWithLines.has(line) === false) === true) {
-			console.log(`warning: ${outputName} had with: values that are not in ${workflowValuesPath}`);
-		}
-	}
-
-	if (existsSync(filepath)) {
-		const contentPathsIgnoreLines = new Set(readPathsIgnoreLines(content));
-
-		if (
-			readPathsIgnoreLines(readFileSync(filepath, 'utf-8')).some((line) => contentPathsIgnoreLines.has(line) === false)
-		) {
-			console.log(`warning: ${outputName} had paths-ignore values that are not in ${workflowValuesPath}`);
-		}
-	}
+	warnUnlistedCallerValues(outputName, content, values !== undefined);
 
 	mkdirSync(dirname(filepath), { recursive: true });
 	writeFileSync(filepath, content);
 	console.log(`wrote ${outputName}`);
 };
 
-const writeDependabotConfig = (outputName, template) => {
-	const filepath = join(cwd, outputName);
+const findManifestDirectoriesByWalk = () => {
 	const manifestDirectories = [];
-	const trackedFiles = spawnSync('git', ['ls-files', '-z'], { cwd, encoding: 'utf-8' });
+	const pendingDirectories = [''];
 
-	if (trackedFiles.status === 0) {
-		for (const path of trackedFiles.stdout.split('\0')) {
-			if (basename(path) === 'package.json' && dirname(path) !== '.') {
-				manifestDirectories.push(`/${dirname(path)}`);
-			}
-		}
-	} else {
-		const pendingDirectories = [''];
+	while (pendingDirectories.length > 0) {
+		const relativeDirectory = pendingDirectories.pop();
 
-		while (pendingDirectories.length > 0) {
-			const relativeDirectory = pendingDirectories.pop();
-
-			for (const entry of readdirSync(join(cwd, relativeDirectory), { withFileTypes: true })) {
-				if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
-					pendingDirectories.push(relativeDirectory === '' ? entry.name : `${relativeDirectory}/${entry.name}`);
-				} else if (entry.isFile() && entry.name === 'package.json' && relativeDirectory !== '') {
-					manifestDirectories.push(`/${relativeDirectory}`);
-				}
+		for (const entry of readdirSync(join(cwd, relativeDirectory), { withFileTypes: true })) {
+			if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
+				pendingDirectories.push(relativeDirectory === '' ? entry.name : `${relativeDirectory}/${entry.name}`);
+			} else if (entry.isFile() && entry.name === 'package.json' && relativeDirectory !== '') {
+				manifestDirectories.push(`/${relativeDirectory}`);
 			}
 		}
 	}
 
+	return manifestDirectories;
+};
+
+const findManifestDirectories = () => {
+	const trackedFiles = spawnSync('git', ['ls-files', '-z'], { cwd, encoding: 'utf-8' });
+
+	if (trackedFiles.status !== 0) {
+		return findManifestDirectoriesByWalk();
+	}
+
+	const manifestDirectories = [];
+
+	for (const path of trackedFiles.stdout.split('\0')) {
+		if (basename(path) === 'package.json' && dirname(path) !== '.') {
+			manifestDirectories.push(`/${dirname(path)}`);
+		}
+	}
+
+	return manifestDirectories;
+};
+
+const writeDependabotConfig = (outputName, template) => {
+	const filepath = join(cwd, outputName);
+	const manifestDirectories = findManifestDirectories();
 	let content = template;
 
 	if (manifestDirectories.length > 0) {
