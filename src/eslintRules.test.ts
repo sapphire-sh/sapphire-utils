@@ -15,6 +15,7 @@ const lint = (code: string) =>
 const NUL = String.fromCharCode(0x00);
 const BELL = String.fromCharCode(0x07);
 const DEL = String.fromCharCode(0x7f);
+const NEL = String.fromCharCode(0x85);
 
 describe('no-control-characters', () => {
 	it('reports a NUL inside a string literal', () => {
@@ -48,6 +49,11 @@ describe('no-control-characters', () => {
 	it('allows tab, newline, and carriage return', () => {
 		// Tab lives inside a string literal; newline and CR separate statements.
 		const messages = lint('const a = "x\ty";\nconst b = 1;\r\n');
+		expect(messages).toHaveLength(0);
+	});
+
+	it('allows C1 control characters such as U+0085', () => {
+		const messages = lint(`const value = "${NEL}";`);
 		expect(messages).toHaveLength(0);
 	});
 

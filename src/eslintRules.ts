@@ -2,9 +2,7 @@ import type { ESLint, Rule } from 'eslint';
 import type { Node } from 'estree';
 
 // C0 control characters and DEL, excluding tab (U+0009), LF (U+000A), and CR (U+000D).
-// Matching control characters is the whole point of this rule, so no-control-regex is expected here.
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARACTER_PATTERN = new RegExp('[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]', 'g');
+const CONTROL_CHARACTER_PATTERN = /(?![\t\n\r\u0080-\u009F])\p{Cc}/gu;
 
 export const noControlCharacters: Rule.RuleModule = {
 	meta: {
