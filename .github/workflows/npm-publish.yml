@@ -21,6 +21,7 @@ jobs:
     with:
       release_tag: ${{ inputs.tag }}
       run_tests: true
+      sonar_scan: true
       runner: ubuntu-latest
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -28,3 +29,4 @@ jobs:
       MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
       MATTERMOST_TOKEN: ${{ secrets.MATTERMOST_TOKEN }}
       MATTERMOST_URL: ${{ secrets.MATTERMOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
