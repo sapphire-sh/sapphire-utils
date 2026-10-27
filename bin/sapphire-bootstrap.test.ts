@@ -23,6 +23,7 @@ const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.ym
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
 const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
 const nodeVerifyWorkflowPath = join('.github', 'workflows', 'node-verify.yml');
+const npmPublishWorkflowPath = join('.github', 'workflows', 'npm-publish.yml');
 const dependabotReviewRequestWorkflowPath = join('.github', 'workflows', 'dependabot-review-request.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const codeOwnersPath = join('.github', 'CODEOWNERS');
@@ -1253,6 +1254,18 @@ describe('sapphire-bootstrap', () => {
 		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
 		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
 		expect(output).toContain(`wrote ${userscriptPublishWorkflowPath}`);
+	});
+
+	it('skips the node verify workflow when the project has its own npm-publish workflow', () => {
+		const project = createProject();
+		mkdirSync(join(project, dirname(npmPublishWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, npmPublishWorkflowPath), 'name: npm-publish\n');
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
+		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
+		expect(output).toContain(`wrote ${nodeAuditFixWorkflowPath}`);
 	});
 
 	it('skips the node verify workflow when the target is utils itself', () => {

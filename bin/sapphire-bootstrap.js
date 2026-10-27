@@ -31,6 +31,7 @@ const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
 const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')]);
 const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), 'userscript-publish']]);
+const fileExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), join(workflowsDir, 'npm-publish.yml')]]);
 const pullRequestWorkflows = new Set(['node-shared-config-update', 'node-utils-update', 'node-audit-fix']);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
@@ -420,6 +421,11 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 	}
 
 	if (entryExcludedFiles.has(outputName) && Object.hasOwn(workflowValues, entryExcludedFiles.get(outputName))) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
+	if (fileExcludedFiles.has(outputName) && existsSync(join(cwd, fileExcludedFiles.get(outputName)))) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}
