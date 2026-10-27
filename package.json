@@ -144,6 +144,17 @@
 		"typescript-eslint": "^8.29.1",
 		"vitest": "^5.0.1"
 	},
+	"overrides": {
+		"eslint-plugin-import": {
+			"eslint": "$eslint"
+		},
+		"eslint-plugin-jsx-a11y": {
+			"eslint": "$eslint"
+		},
+		"eslint-plugin-react": {
+			"eslint": "$eslint"
+		}
+	},
 	"allowScripts": {
 		"fsevents@2.3.3": true,
 		"unrs-resolver@1.12.2": true
