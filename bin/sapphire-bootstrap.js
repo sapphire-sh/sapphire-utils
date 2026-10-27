@@ -208,6 +208,14 @@ const writeWorkflow = (outputName, template) => {
 		}
 	}
 
+	if (
+		name === 'workflow-startup-failure-notify' &&
+		isSelf === false &&
+		existsSync(join(cwd, workflowsDir, 'npm-publish.yml'))
+	) {
+		content = content.replace('    types:\n', '      - npm-publish\n    types:\n');
+	}
+
 	warnUnlistedCallerValues(outputName, content, values !== undefined);
 
 	mkdirSync(dirname(filepath), { recursive: true });

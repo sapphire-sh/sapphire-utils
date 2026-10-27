@@ -25,6 +25,7 @@ const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-p
 const nodeVerifyWorkflowPath = join('.github', 'workflows', 'node-verify.yml');
 const npmPublishWorkflowPath = join('.github', 'workflows', 'npm-publish.yml');
 const dependabotReviewRequestWorkflowPath = join('.github', 'workflows', 'dependabot-review-request.yml');
+const workflowStartupFailureNotifyWorkflowPath = join('.github', 'workflows', 'workflow-startup-failure-notify.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const codeOwnersPath = join('.github', 'CODEOWNERS');
 const nodeSharedConfigUpdateTemplate = readFileSync(
@@ -1291,6 +1292,34 @@ describe('sapphire-bootstrap', () => {
 
 		expect(watchedNames.toSorted((a, b) => (a < b ? -1 : Number(a > b)))).toEqual(
 			otherNames.toSorted((a, b) => (String(a) < String(b) ? -1 : Number(String(a) > String(b)))),
+		);
+	});
+
+	it('adds npm-publish to the startup failure notify workflow when the project has its own npm-publish workflow', () => {
+		const project = createProject();
+		mkdirSync(join(project, dirname(npmPublishWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, npmPublishWorkflowPath), 'name: npm-publish\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, workflowStartupFailureNotifyWorkflowPath), 'utf-8')).toBe(
+			workflowStartupFailureNotifyTemplate.replace(
+				'      - Publish Userscript\n',
+				'      - Publish Userscript\n      - npm-publish\n',
+			),
+		);
+	});
+
+	it('leaves npm-publish out of the startup failure notify workflow in @sapphire-sh/utils itself', () => {
+		const project = createProject();
+		writeFileSync(join(project, 'package.json'), JSON.stringify({ name: '@sapphire-sh/utils' }));
+		mkdirSync(join(project, dirname(npmPublishWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, npmPublishWorkflowPath), 'name: npm-publish\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, workflowStartupFailureNotifyWorkflowPath), 'utf-8')).toBe(
+			workflowStartupFailureNotifyTemplate,
 		);
 	});
 
