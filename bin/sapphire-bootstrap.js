@@ -373,6 +373,16 @@ for (const [name, values] of Object.entries(workflowValues)) {
 		}
 	}
 
+	const template = readFileSync(join(templatesDir, callerPath), 'utf-8');
+	const templateWithKeys = new Set(readWithLines(template).map((line) => line.trim().split(':')[0]));
+
+	for (const key of Object.keys(values.with ?? {})) {
+		if (templateWithKeys.has(key)) {
+			console.error(`error: ${workflowValuesPath} ${name}.with.${key} is already set by the workflow template`);
+			process.exit(1);
+		}
+	}
+
 	if (name === 'userscript-publish' && values.with?.assets === undefined) {
 		console.error(`error: ${workflowValuesPath} userscript-publish has no with.assets`);
 		process.exit(1);
@@ -399,7 +409,7 @@ for (const [name, values] of Object.entries(workflowValues)) {
 	}
 
 	const [pushKey] = Object.keys(values.push);
-	const pushBlock = pushBlockPattern.exec(readFileSync(join(templatesDir, callerPath), 'utf-8'));
+	const pushBlock = pushBlockPattern.exec(template);
 
 	if (pushBlock === null || /^ {4}paths:/m.test(pushBlock[1])) {
 		console.error(

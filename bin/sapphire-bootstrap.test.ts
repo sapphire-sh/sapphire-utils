@@ -1068,6 +1068,22 @@ describe('sapphire-bootstrap', () => {
 		expect(result.stderr).toBe(`error: ${workflowValuesPath} docker-publish.push has unknown key branches\n`);
 	});
 
+	it("exits with an error when an entry's with key is already in the workflow template", () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'workflow-startup-failure-notify': { with: { runner: 'ubuntu-latest' } } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${workflowValuesPath} workflow-startup-failure-notify.with.runner is already set by the workflow template\n`,
+		);
+	});
+
 	it('exits with an error when push sets both paths and paths-ignore', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
