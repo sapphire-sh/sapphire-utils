@@ -1084,6 +1084,23 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
+	it("exits with an error when an entry's with key is already set by CODEOWNERS", () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'node-audit-fix': { with: { assignee: 'example-user' } } }),
+		);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${workflowValuesPath} node-audit-fix.with.assignee is already set by ${codeOwnersPath}\n`,
+		);
+	});
+
 	it('exits with an error when push sets both paths and paths-ignore', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');

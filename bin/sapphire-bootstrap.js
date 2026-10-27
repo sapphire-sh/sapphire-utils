@@ -33,6 +33,10 @@ const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')
 const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), 'userscript-publish']]);
 const fileExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), join(workflowsDir, 'npm-publish.yml')]]);
 const pullRequestWorkflows = new Set(['node-shared-config-update', 'node-utils-update', 'node-audit-fix']);
+const codeOwnerWithKeys = new Map([
+	['dependabot-review-request', 'reviewers'],
+	...[...pullRequestWorkflows].map((name) => [name, 'assignee']),
+]);
 
 const sectioned = new Set(['.gitignore', '.prettierignore']);
 const renameMap = new Map([
@@ -381,6 +385,17 @@ for (const [name, values] of Object.entries(workflowValues)) {
 			console.error(`error: ${workflowValuesPath} ${name}.with.${key} is already set by the workflow template`);
 			process.exit(1);
 		}
+	}
+
+	const codeOwnerWithKey = codeOwnerWithKeys.get(name);
+
+	if (
+		codeOwnerWithKey !== undefined &&
+		Object.hasOwn(values.with ?? {}, codeOwnerWithKey) &&
+		readCodeOwnerUsers().length > 0
+	) {
+		console.error(`error: ${workflowValuesPath} ${name}.with.${codeOwnerWithKey} is already set by ${codeOwnersPath}`);
+		process.exit(1);
 	}
 
 	if (name === 'userscript-publish' && values.with?.assets === undefined) {
