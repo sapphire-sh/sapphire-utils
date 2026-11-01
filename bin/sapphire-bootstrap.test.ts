@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const scriptPath = fileURLToPath(new URL('sapphire-bootstrap.js', import.meta.url));
 const nodeSharedConfigUpdateWorkflowPath = join('.github', 'workflows', 'node-shared-config-update.yml');
 const nodeUtilsUpdateWorkflowPath = join('.github', 'workflows', 'node-utils-update.yml');
+const nodeUiUpdateWorkflowPath = join('.github', 'workflows', 'node-ui-update.yml');
 const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml');
 const dependabotConfigPath = join('.github', 'dependabot.yml');
 const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.yml');
@@ -34,6 +35,10 @@ const nodeSharedConfigUpdateTemplate = readFileSync(
 );
 const nodeUtilsUpdateTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/node-utils-update.yml', import.meta.url)),
+	'utf-8',
+);
+const nodeUiUpdateTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/node-ui-update.yml', import.meta.url)),
 	'utf-8',
 );
 const dependabotTemplate = readFileSync(
@@ -210,6 +215,63 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(
 			`${nodeUtilsUpdateTemplate}    with:\n      run_tests: true\n      rebuild_packages: 'example-package'\n`,
+		);
+	});
+
+	it('writes the node-ui-update when the workflow configuration has its entry', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'node-ui-update': {} }));
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${nodeUiUpdateWorkflowPath}`);
+		expect(readFileSync(join(project, nodeUiUpdateWorkflowPath), 'utf-8')).toBe(
+			[
+				'name: node-ui-update',
+				'',
+				'on:',
+				'  schedule:',
+				"    - cron: '0 0 * * *'",
+				'  workflow_dispatch:',
+				'',
+				'jobs:',
+				'  update:',
+				'    uses: sapphire-sh/github-actions/.github/workflows/node-utils-update-template.yml@main',
+				'    permissions:',
+				'      contents: write',
+				'      issues: write',
+				'      pull-requests: write',
+				'    secrets:',
+				'      PULL_REQUEST_TOKEN: ${{ secrets.PULL_REQUEST_TOKEN }}',
+				'    with:',
+				"      package_name: '@sapphire-sh/ui'",
+				'      branch_name: chore/sapphire-ui',
+				'',
+			].join('\n'),
+		);
+	});
+
+	it('skips the node-ui-update when the workflow configuration has no entry', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${nodeUiUpdateWorkflowPath}`);
+		expect(existsSync(join(project, nodeUiUpdateWorkflowPath))).toBe(false);
+		expect(readFileSync(join(project, nodeUtilsUpdateWorkflowPath), 'utf-8')).toBe(nodeUtilsUpdateTemplate);
+	});
+
+	it('appends the CODEOWNERS user to the node-ui-update as assignee', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'node-ui-update': {} }));
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, nodeUiUpdateWorkflowPath), 'utf-8')).toBe(
+			`${nodeUiUpdateTemplate}      assignee: 'example-user'\n`,
 		);
 	});
 
