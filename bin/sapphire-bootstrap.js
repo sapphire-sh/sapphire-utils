@@ -29,10 +29,8 @@ const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
 const entryKeys = new Set(['push', 'with']);
 const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
-const entryRequiredFiles = new Set([
-	join(workflowsDir, 'userscript-publish.yml'),
-	join(workflowsDir, 'node-ui-update.yml'),
-]);
+const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')]);
+const dependencyRequiredFiles = new Map([[join(workflowsDir, 'node-ui-update.yml'), '@sapphire-sh/ui']]);
 const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), 'userscript-publish']]);
 const fileExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), join(workflowsDir, 'npm-publish.yml')]]);
 const pullRequestWorkflows = new Set([
@@ -272,6 +270,20 @@ const findManifestDirectories = () => {
 	return manifestDirectories;
 };
 
+const dependencyFields = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'];
+
+const hasDependency = (packageName) =>
+	['', ...findManifestDirectories()].some((directory) => {
+		const filepath = join(cwd, directory, 'package.json');
+
+		if (existsSync(filepath) === false) {
+			return false;
+		}
+
+		const manifest = JSON.parse(readFileSync(filepath, 'utf-8'));
+		return dependencyFields.some((field) => Object.hasOwn(manifest[field] ?? {}, packageName));
+	});
+
 const writeDependabotConfig = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const manifestDirectories = findManifestDirectories();
@@ -457,6 +469,11 @@ for (const relativePath of collectTemplates(templatesDir, '')) {
 	}
 
 	if (entryRequiredFiles.has(outputName) && Object.hasOwn(workflowValues, basename(outputName, '.yml')) === false) {
+		console.log(`skipped ${outputName}`);
+		continue;
+	}
+
+	if (dependencyRequiredFiles.has(outputName) && hasDependency(dependencyRequiredFiles.get(outputName)) === false) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}

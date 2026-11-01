@@ -169,7 +169,7 @@ describe('sapphire-bootstrap', () => {
 				'',
 				'jobs:',
 				'  update:',
-				'    uses: sapphire-sh/github-actions/.github/workflows/node-utils-update-template.yml@main',
+				'    uses: sapphire-sh/github-actions/.github/workflows/node-sapphire-package-update-template.yml@main',
 				'    permissions:',
 				'      contents: write',
 				'      issues: write',
@@ -218,10 +218,15 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
-	it('writes the node-ui-update when the workflow configuration has its entry', () => {
+	it('writes the node-ui-update when a tracked package.json depends on @sapphire-sh/ui', () => {
 		const project = createProject();
-		mkdirSync(join(project, '.github'), { recursive: true });
-		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'node-ui-update': {} }));
+		mkdirSync(join(project, 'packages', 'web'), { recursive: true });
+		writeFileSync(
+			join(project, 'packages', 'web', 'package.json'),
+			JSON.stringify({ name: 'web', devDependencies: { '@sapphire-sh/ui': '^0.14.0' } }),
+		);
+		execFileSync('git', ['init'], { cwd: project });
+		execFileSync('git', ['add', '.'], { cwd: project });
 
 		const output = runBootstrap(project);
 
@@ -237,7 +242,7 @@ describe('sapphire-bootstrap', () => {
 				'',
 				'jobs:',
 				'  update:',
-				'    uses: sapphire-sh/github-actions/.github/workflows/node-utils-update-template.yml@main',
+				'    uses: sapphire-sh/github-actions/.github/workflows/node-sapphire-package-update-template.yml@main',
 				'    permissions:',
 				'      contents: write',
 				'      issues: write',
@@ -252,7 +257,7 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
-	it('skips the node-ui-update when the workflow configuration has no entry', () => {
+	it('skips the node-ui-update when no package.json depends on @sapphire-sh/ui', () => {
 		const project = createProject();
 
 		const output = runBootstrap(project);
@@ -266,7 +271,10 @@ describe('sapphire-bootstrap', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(join(project, codeOwnersPath), '* @example-user\n');
-		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'node-ui-update': {} }));
+		writeFileSync(
+			join(project, 'package.json'),
+			JSON.stringify({ name: 'example', dependencies: { '@sapphire-sh/ui': '^0.14.0' } }),
+		);
 
 		runBootstrap(project);
 
@@ -303,11 +311,14 @@ describe('sapphire-bootstrap', () => {
 				"          - '*'",
 				'        exclude-patterns:',
 				"          - '@sapphire-sh/utils'",
+				"          - '@sapphire-sh/ui'",
 				'    cooldown:',
 				'      exclude:',
 				"        - '@sapphire-sh/utils'",
+				"        - '@sapphire-sh/ui'",
 				'    ignore:',
 				"      - dependency-name: '@sapphire-sh/utils'",
+				"      - dependency-name: '@sapphire-sh/ui'",
 				'  - package-ecosystem: github-actions',
 				'    directory: /',
 				'    schedule:',
@@ -475,11 +486,14 @@ describe('sapphire-bootstrap', () => {
 				"          - '*'",
 				'        exclude-patterns:',
 				"          - '@sapphire-sh/utils'",
+				"          - '@sapphire-sh/ui'",
 				'    cooldown:',
 				'      exclude:',
 				"        - '@sapphire-sh/utils'",
+				"        - '@sapphire-sh/ui'",
 				'    ignore:',
 				"      - dependency-name: '@sapphire-sh/utils'",
+				"      - dependency-name: '@sapphire-sh/ui'",
 				'    assignees:',
 				"      - 'example-user'",
 				'  - package-ecosystem: github-actions',
