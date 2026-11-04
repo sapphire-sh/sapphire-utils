@@ -105,8 +105,40 @@ const readCodeOwnerUsers = () => {
 	return assignees;
 };
 
+const repositoryOwnerPattern = /github\.com[:/]([^/]+)\//;
+
+const readRepositoryOwner = () => {
+	const remoteUrl = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd, encoding: 'utf-8' });
+
+	if (remoteUrl.status !== 0) {
+		return null;
+	}
+
+	return repositoryOwnerPattern.exec(remoteUrl.stdout)?.[1] ?? null;
+};
+
+const writeCodeOwnersIfAbsent = () => {
+	const filepath = join(cwd, codeOwnersPath);
+
+	if (existsSync(filepath)) {
+		return;
+	}
+
+	const owner = readRepositoryOwner();
+
+	if (owner === null) {
+		return;
+	}
+
+	mkdirSync(dirname(filepath), { recursive: true });
+	writeFileSync(filepath, `* @${owner}\n`);
+	console.log(`wrote ${codeOwnersPath}`);
+};
+
 const isSelf = readPackageName() === selfPackageName;
 const workflowValues = readWorkflowValues();
+
+writeCodeOwnersIfAbsent();
 
 const writeSectioned = (outputName, content) => {
 	const filepath = join(cwd, outputName);

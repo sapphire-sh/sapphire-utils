@@ -87,6 +87,13 @@ const createProject = () => {
 	return project;
 };
 
+const createProjectWithOrigin = (remoteUrl: string) => {
+	const project = createProject();
+	execFileSync('git', ['init', '-q'], { cwd: project });
+	execFileSync('git', ['remote', 'add', 'origin', remoteUrl], { cwd: project });
+	return project;
+};
+
 const runBootstrap = (cwd: string) => execFileSync(process.execPath, [scriptPath], { cwd, encoding: 'utf-8' });
 
 afterEach(() => {
@@ -447,6 +454,59 @@ describe('sapphire-bootstrap', () => {
 				"  - package-ecosystem: npm\n    directories:\n      - '/'\n      - '/packages/한글'\n",
 			),
 		);
+	});
+
+	it('writes the repository owner to CODEOWNERS when the target has none', () => {
+		const project = createProjectWithOrigin('https://github.com/example-user/example-repo.git');
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${codeOwnersPath}`);
+		expect(readFileSync(join(project, codeOwnersPath), 'utf-8')).toBe('* @example-user\n');
+	});
+
+	it('reads the repository owner from an ssh origin URL', () => {
+		const project = createProjectWithOrigin('git@github.com:example-user/example-repo.git');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, codeOwnersPath), 'utf-8')).toBe('* @example-user\n');
+	});
+
+	it('picks the written CODEOWNERS owner for dependabot and the review request caller', () => {
+		const project = createProjectWithOrigin('https://github.com/example-user/example-repo.git');
+		const assigneeBlock = "    assignees:\n      - 'example-user'\n";
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(
+			`${dependabotTemplate.replace(
+				'  - package-ecosystem: github-actions\n',
+				`${assigneeBlock}  - package-ecosystem: github-actions\n`,
+			)}${assigneeBlock}`,
+		);
+		expect(readFileSync(join(project, dependabotReviewRequestWorkflowPath), 'utf-8')).toBe(
+			`${dependabotReviewRequestTemplate}    with:\n      reviewers: 'example-user'\n`,
+		);
+	});
+
+	it('keeps the existing CODEOWNERS content', () => {
+		const project = createProjectWithOrigin('https://github.com/example-user/example-repo.git');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, codeOwnersPath), '* @other-user\n');
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, codeOwnersPath), 'utf-8')).toBe('* @other-user\n');
+	});
+
+	it('writes the dependabot config unchanged when the repository owner cannot be read', () => {
+		const project = createProject();
+
+		runBootstrap(project);
+
+		expect(existsSync(join(project, codeOwnersPath))).toBe(false);
+		expect(readFileSync(join(project, dependabotConfigPath), 'utf-8')).toBe(dependabotTemplate);
 	});
 
 	it('assigns the CODEOWNERS default owner to every dependabot update entry', () => {
