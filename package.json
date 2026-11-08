@@ -1,6 +1,6 @@
 {
 	"name": "@sapphire-sh/utils",
-	"version": "3.45.0",
+	"version": "3.46.0",
 	"description": "@sapphire-sh/utils",
 	"type": "module",
 	"sideEffects": false,
