@@ -986,7 +986,7 @@ describe('sapphire-bootstrap', () => {
 
 		const content = readFileSync(join(project, dockerPublishWorkflowPath), 'utf-8');
 		expect(content.slice(0, content.indexOf('\nconcurrency:'))).toBe(
-			"name: Build and Push Docker Image\n\non:\n  push:\n    branches:\n      - main\n    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n  pull_request:\n",
+			"name: Build and Push Docker Image\n\non:\n  push:\n    branches:\n      - main\n    paths-ignore:\n      - '.github/**'\n      - '**/*.md'\n      - '.vscode/**'\n  pull_request:\n  workflow_dispatch:\n",
 		);
 	});
 
@@ -1104,6 +1104,7 @@ describe('sapphire-bootstrap', () => {
 				"      - '**/*.md'",
 				"      - '.vscode/**'",
 				'  pull_request:',
+				'  workflow_dispatch:',
 				'',
 				'concurrency:',
 				'  group: ${{ github.workflow }}-${{ github.ref }}',
