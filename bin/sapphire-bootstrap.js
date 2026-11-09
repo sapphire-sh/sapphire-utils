@@ -121,6 +121,13 @@ const readRepositoryOwner = () => {
 	return repositoryOwnerPattern.exec(remoteUrl.stdout)?.[1] ?? null;
 };
 
+const writeOutput = (outputName, content) => {
+	const filepath = join(cwd, outputName);
+	mkdirSync(dirname(filepath), { recursive: true });
+	writeFileSync(filepath, content);
+	console.log(`wrote ${outputName}`);
+};
+
 const writeCodeOwnersIfAbsent = () => {
 	const filepath = join(cwd, codeOwnersPath);
 
@@ -134,15 +141,15 @@ const writeCodeOwnersIfAbsent = () => {
 		return;
 	}
 
-	mkdirSync(dirname(filepath), { recursive: true });
-	writeFileSync(filepath, `* @${owner}\n`);
-	console.log(`wrote ${codeOwnersPath}`);
+	writeOutput(codeOwnersPath, `* @${owner}\n`);
 };
 
 const isSelf = readPackageName() === selfPackageName;
 const workflowValues = readWorkflowValues();
 
 writeCodeOwnersIfAbsent();
+
+const codeOwnerUsers = readCodeOwnerUsers();
 
 const writeSectioned = (outputName, content) => {
 	const filepath = join(cwd, outputName);
@@ -254,25 +261,14 @@ const warnUnlistedCallerValues = (outputName, content, hasValues) => {
 };
 
 const writeWorkflow = (outputName, template) => {
-	const filepath = join(cwd, outputName);
 	const name = basename(outputName, '.yml');
 	const values = workflowValues[name];
 	let content = values === undefined ? template : applyWorkflowValues(outputName, template, values);
 
-	if (name === 'dependabot-review-request') {
-		const reviewers = readCodeOwnerUsers();
+	const codeOwnerWithKey = codeOwnerWithKeys.get(name);
 
-		if (reviewers.length > 0) {
-			content = appendWithLines(content, [['reviewers', reviewers.join(' ')]]);
-		}
-	}
-
-	if (pullRequestWorkflows.has(name)) {
-		const assignees = readCodeOwnerUsers();
-
-		if (assignees.length > 0) {
-			content = appendWithLines(content, [['assignee', assignees.join(' ')]]);
-		}
+	if (codeOwnerWithKey !== undefined && codeOwnerUsers.length > 0) {
+		content = appendWithLines(content, [[codeOwnerWithKey, codeOwnerUsers.join(' ')]]);
 	}
 
 	if (
@@ -290,9 +286,7 @@ const writeWorkflow = (outputName, template) => {
 
 	warnUnlistedCallerValues(outputName, content, values !== undefined);
 
-	mkdirSync(dirname(filepath), { recursive: true });
-	writeFileSync(filepath, content);
-	console.log(`wrote ${outputName}`);
+	writeOutput(outputName, content);
 };
 
 const findManifestDirectoriesByWalk = () => {
@@ -332,10 +326,11 @@ const findManifestDirectories = () => {
 	return manifestDirectories;
 };
 
+const manifestDirectories = findManifestDirectories();
 const dependencyFields = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'];
 
 const hasDependency = (packageName) =>
-	['', ...findManifestDirectories()].some((directory) => {
+	['', ...manifestDirectories].some((directory) => {
 		const filepath = join(cwd, directory, 'package.json');
 
 		if (existsSync(filepath) === false) {
@@ -346,14 +341,14 @@ const hasDependency = (packageName) =>
 		return dependencyFields.some((field) => Object.hasOwn(manifest[field] ?? {}, packageName));
 	});
 
+const compareStrings = (a, b) => (a < b ? -1 : Number(a > b));
+
 const writeDependabotConfig = (outputName, template) => {
-	const filepath = join(cwd, outputName);
-	const manifestDirectories = findManifestDirectories();
 	let content = template;
 
 	if (manifestDirectories.length > 0) {
 		const directoryLines = ['/', ...manifestDirectories]
-			.toSorted((a, b) => (a < b ? -1 : Number(a > b)))
+			.toSorted(compareStrings)
 			.map((directory) => `      - ${formatYamlValue(directory)}\n`)
 			.join('');
 		content = replaceOrFail(
@@ -364,7 +359,7 @@ const writeDependabotConfig = (outputName, template) => {
 		);
 	}
 
-	const assignees = readCodeOwnerUsers();
+	const assignees = codeOwnerUsers;
 
 	if (assignees.length > 0) {
 		const assigneeLines = assignees.map((assignee) => `      - ${formatYamlValue(assignee)}\n`).join('');
@@ -376,9 +371,7 @@ const writeDependabotConfig = (outputName, template) => {
 			.join('');
 	}
 
-	mkdirSync(dirname(filepath), { recursive: true });
-	writeFileSync(filepath, content);
-	console.log(`wrote ${outputName}`);
+	writeOutput(outputName, content);
 };
 
 const selfManifestPath = join(fileURLToPath(import.meta.url), '..', '..', 'package.json');
@@ -422,7 +415,7 @@ const writePrettierDependencies = () => {
 
 	manifest.devDependencies = Object.fromEntries(
 		Object.keys(devDependencies)
-			.toSorted((a, b) => (a < b ? -1 : Number(a > b)))
+			.toSorted(compareStrings)
 			.map((name) => [name, devDependencies[name]]),
 	);
 	const indent = /^[ \t]+/m.exec(existing)?.[0] ?? '\t';
@@ -446,18 +439,21 @@ const collectTemplates = (directory, prefix) => {
 	return relativePaths;
 };
 
+const fail = (message) => {
+	console.error(`error: ${message}`);
+	process.exit(1);
+};
+
 for (const [name, values] of Object.entries(workflowValues)) {
 	const callerPath = join(workflowsDir, `${name}.yml`);
 
 	if (existsSync(join(templatesDir, callerPath)) === false) {
-		console.error(`error: ${workflowValuesPath} ${name} names no workflow template`);
-		process.exit(1);
+		fail(`${workflowValuesPath} ${name} names no workflow template`);
 	}
 
 	for (const key of Object.keys(values)) {
 		if (entryKeys.has(key) === false) {
-			console.error(`error: ${workflowValuesPath} ${name} has unknown key ${key}`);
-			process.exit(1);
+			fail(`${workflowValuesPath} ${name} has unknown key ${key}`);
 		}
 	}
 
@@ -466,8 +462,7 @@ for (const [name, values] of Object.entries(workflowValues)) {
 
 	for (const key of Object.keys(values.with ?? {})) {
 		if (templateWithKeys.has(key)) {
-			console.error(`error: ${workflowValuesPath} ${name}.with.${key} is already set by the workflow template`);
-			process.exit(1);
+			fail(`${workflowValuesPath} ${name}.with.${key} is already set by the workflow template`);
 		}
 	}
 
@@ -476,15 +471,13 @@ for (const [name, values] of Object.entries(workflowValues)) {
 	if (
 		codeOwnerWithKey !== undefined &&
 		Object.hasOwn(values.with ?? {}, codeOwnerWithKey) &&
-		readCodeOwnerUsers().length > 0
+		codeOwnerUsers.length > 0
 	) {
-		console.error(`error: ${workflowValuesPath} ${name}.with.${codeOwnerWithKey} is already set by ${codeOwnersPath}`);
-		process.exit(1);
+		fail(`${workflowValuesPath} ${name}.with.${codeOwnerWithKey} is already set by ${codeOwnersPath}`);
 	}
 
 	if (name === 'userscript-publish' && values.with?.assets === undefined) {
-		console.error(`error: ${workflowValuesPath} userscript-publish has no with.assets`);
-		process.exit(1);
+		fail(`${workflowValuesPath} userscript-publish has no with.assets`);
 	}
 
 	if (values.push === undefined) {
@@ -493,14 +486,12 @@ for (const [name, values] of Object.entries(workflowValues)) {
 
 	for (const key of Object.keys(values.push)) {
 		if (pushKeys.has(key) === false) {
-			console.error(`error: ${workflowValuesPath} ${name}.push has unknown key ${key}`);
-			process.exit(1);
+			fail(`${workflowValuesPath} ${name}.push has unknown key ${key}`);
 		}
 	}
 
 	if (Object.hasOwn(values.push, 'paths') && Object.hasOwn(values.push, 'paths-ignore')) {
-		console.error(`error: ${workflowValuesPath} ${name}.push sets both paths and paths-ignore`);
-		process.exit(1);
+		fail(`${workflowValuesPath} ${name}.push sets both paths and paths-ignore`);
 	}
 
 	if (Object.keys(values.push).length === 0) {
@@ -511,43 +502,25 @@ for (const [name, values] of Object.entries(workflowValues)) {
 	const pushBlock = pushBlockPattern.exec(template);
 
 	if (pushBlock === null || /^ {4}paths:/m.test(pushBlock[1])) {
-		console.error(
-			`error: ${workflowValuesPath} sets push.${pushKey} for ${callerPath}, whose template has no push trigger without paths`,
+		fail(
+			`${workflowValuesPath} sets push.${pushKey} for ${callerPath}, whose template has no push trigger without paths`,
 		);
-		process.exit(1);
 	}
 }
+
+const shouldSkip = (outputName) =>
+	(isSelf && selfSkipped.has(outputName)) ||
+	(requiredFiles.has(outputName) && existsSync(join(cwd, requiredFiles.get(outputName))) === false) ||
+	(entryRequiredFiles.has(outputName) && Object.hasOwn(workflowValues, basename(outputName, '.yml')) === false) ||
+	(dependencyRequiredFiles.has(outputName) && hasDependency(dependencyRequiredFiles.get(outputName)) === false) ||
+	(entryExcludedFiles.has(outputName) && Object.hasOwn(workflowValues, entryExcludedFiles.get(outputName))) ||
+	(fileExcludedFiles.has(outputName) && existsSync(join(cwd, fileExcludedFiles.get(outputName))));
 
 for (const relativePath of collectTemplates(templatesDir, '')) {
 	const outputName = renameMap.get(relativePath) ?? relativePath;
 	const outputPath = join(cwd, outputName);
 
-	if (isSelf && selfSkipped.has(outputName)) {
-		console.log(`skipped ${outputName}`);
-		continue;
-	}
-
-	if (requiredFiles.has(outputName) && existsSync(join(cwd, requiredFiles.get(outputName))) === false) {
-		console.log(`skipped ${outputName}`);
-		continue;
-	}
-
-	if (entryRequiredFiles.has(outputName) && Object.hasOwn(workflowValues, basename(outputName, '.yml')) === false) {
-		console.log(`skipped ${outputName}`);
-		continue;
-	}
-
-	if (dependencyRequiredFiles.has(outputName) && hasDependency(dependencyRequiredFiles.get(outputName)) === false) {
-		console.log(`skipped ${outputName}`);
-		continue;
-	}
-
-	if (entryExcludedFiles.has(outputName) && Object.hasOwn(workflowValues, entryExcludedFiles.get(outputName))) {
-		console.log(`skipped ${outputName}`);
-		continue;
-	}
-
-	if (fileExcludedFiles.has(outputName) && existsSync(join(cwd, fileExcludedFiles.get(outputName)))) {
+	if (shouldSkip(outputName)) {
 		console.log(`skipped ${outputName}`);
 		continue;
 	}
