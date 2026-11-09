@@ -51,7 +51,11 @@ const renameMap = new Map([
 	['prettierignore.template', '.prettierignore'],
 ]);
 
-const templatesDir = join(fileURLToPath(import.meta.url), '..', '..', 'templates');
+const templatesDirectoryOverride = process.env.SAPPHIRE_BOOTSTRAP_TEMPLATES_DIRECTORY;
+const templatesDir =
+	templatesDirectoryOverride === undefined || templatesDirectoryOverride === ''
+		? join(fileURLToPath(import.meta.url), '..', '..', 'templates')
+		: templatesDirectoryOverride;
 const cwd = process.cwd();
 
 const readPackageName = () => {
@@ -154,6 +158,11 @@ const writeSectioned = (outputName, content) => {
 	const startIndex = existing.indexOf(START_MARKER);
 	const endIndex = existing.indexOf(END_MARKER);
 
+	if ((startIndex === -1) !== (endIndex === -1)) {
+		console.error(`error: ${outputName} has only one of the ${START_MARKER} and ${END_MARKER} lines`);
+		process.exit(1);
+	}
+
 	if (startIndex !== -1 && endIndex !== -1) {
 		const before = existing.slice(0, startIndex);
 		const after = existing.slice(endIndex + END_MARKER.length);
@@ -163,6 +172,17 @@ const writeSectioned = (outputName, content) => {
 	}
 
 	console.log(`wrote ${outputName}`);
+};
+
+const replaceOrFail = (content, pattern, replacement, message) => {
+	const replaced = content.replace(pattern, replacement);
+
+	if (replaced === content) {
+		console.error(`error: ${message}`);
+		process.exit(1);
+	}
+
+	return replaced;
 };
 
 const formatYamlValue = (value) =>
@@ -192,7 +212,7 @@ const appendWithLines = (content, entries) => {
 	return `${content}${withLine}${valueLines}`;
 };
 
-const applyWorkflowValues = (template, values) => {
+const applyWorkflowValues = (outputName, template, values) => {
 	const { push = {}, with: withValues } = values;
 	let content = template;
 
@@ -202,7 +222,12 @@ const applyWorkflowValues = (template, values) => {
 
 	for (const [key, patterns] of Object.entries(push)) {
 		const patternLines = patterns.map((value) => `      - ${formatYamlValue(value)}\n`).join('');
-		content = content.replace(branchesListPattern, (branchesList) => `${branchesList}    ${key}:\n${patternLines}`);
+		content = replaceOrFail(
+			content,
+			branchesListPattern,
+			(branchesList) => `${branchesList}    ${key}:\n${patternLines}`,
+			`${outputName} template has no push branches list for push.${key}`,
+		);
 	}
 
 	return withValues === undefined ? content : appendWithLines(content, Object.entries(withValues));
@@ -232,7 +257,7 @@ const writeWorkflow = (outputName, template) => {
 	const filepath = join(cwd, outputName);
 	const name = basename(outputName, '.yml');
 	const values = workflowValues[name];
-	let content = values === undefined ? template : applyWorkflowValues(template, values);
+	let content = values === undefined ? template : applyWorkflowValues(outputName, template, values);
 
 	if (name === 'dependabot-review-request') {
 		const reviewers = readCodeOwnerUsers();
@@ -255,7 +280,12 @@ const writeWorkflow = (outputName, template) => {
 		isSelf === false &&
 		existsSync(join(cwd, workflowsDir, 'npm-publish.yml'))
 	) {
-		content = content.replace('    types:\n', '      - npm-publish\n    types:\n');
+		content = replaceOrFail(
+			content,
+			'    types:\n',
+			'      - npm-publish\n    types:\n',
+			`${outputName} template has no types: line to add npm-publish before`,
+		);
 	}
 
 	warnUnlistedCallerValues(outputName, content, values !== undefined);
@@ -326,9 +356,11 @@ const writeDependabotConfig = (outputName, template) => {
 			.toSorted((a, b) => (a < b ? -1 : Number(a > b)))
 			.map((directory) => `      - ${formatYamlValue(directory)}\n`)
 			.join('');
-		content = template.replace(
+		content = replaceOrFail(
+			template,
 			'  - package-ecosystem: npm\n    directory: /\n',
 			`  - package-ecosystem: npm\n    directories:\n${directoryLines}`,
+			`${outputName} template has no npm entry with directory: /`,
 		);
 	}
 

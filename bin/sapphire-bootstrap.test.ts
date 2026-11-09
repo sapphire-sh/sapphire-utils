@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
+	cpSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -95,6 +96,21 @@ const createProjectWithOrigin = (remoteUrl: string) => {
 };
 
 const runBootstrap = (cwd: string) => execFileSync(process.execPath, [scriptPath], { cwd, encoding: 'utf-8' });
+
+const copyTemplates = (relativePath: string, edit: (content: string) => string) => {
+	const templatesDirectory = createProject();
+	cpSync(fileURLToPath(new URL('../templates', import.meta.url)), templatesDirectory, { recursive: true });
+	const filepath = join(templatesDirectory, relativePath);
+	writeFileSync(filepath, edit(readFileSync(filepath, 'utf-8')));
+	return templatesDirectory;
+};
+
+const runBootstrapWithTemplates = (cwd: string, templatesDirectory: string) =>
+	spawnSync(process.execPath, [scriptPath], {
+		cwd,
+		encoding: 'utf-8',
+		env: { ...process.env, SAPPHIRE_BOOTSTRAP_TEMPLATES_DIRECTORY: templatesDirectory },
+	});
 
 afterEach(() => {
 	for (const project of projects.splice(0)) {
@@ -1513,6 +1529,87 @@ describe('sapphire-bootstrap', () => {
 		expect(readFileSync(join(project, '.prettierignore'), 'utf-8')).toBe(
 			`${prettierignoreSection}\n\nmigrations/meta\n`,
 		);
+	});
+
+	it('exits with an error when an existing .prettierignore has only the start marker', () => {
+		const project = createProject();
+		const existing = '# @sapphire-sh/utils:start\nstale\n\nmigrations/meta\n';
+		writeFileSync(join(project, '.prettierignore'), existing);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			'error: .prettierignore has only one of the # @sapphire-sh/utils:start and # @sapphire-sh/utils:end lines\n',
+		);
+		expect(readFileSync(join(project, '.prettierignore'), 'utf-8')).toBe(existing);
+	});
+
+	it('exits with an error when an existing .prettierignore has only the end marker', () => {
+		const project = createProject();
+		const existing = 'stale\n# @sapphire-sh/utils:end\n\nmigrations/meta\n';
+		writeFileSync(join(project, '.prettierignore'), existing);
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			'error: .prettierignore has only one of the # @sapphire-sh/utils:start and # @sapphire-sh/utils:end lines\n',
+		);
+		expect(readFileSync(join(project, '.prettierignore'), 'utf-8')).toBe(existing);
+	});
+
+	it('exits with an error when the docker-publish template has no push branches list for the push values', () => {
+		const templatesDirectory = copyTemplates(dockerPublishWorkflowPath, (content) =>
+			content.replace('    branches:\n      - main\n', ''),
+		);
+		const project = createProject();
+		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'docker-publish': { push: { 'paths-ignore': ['example/**'] } } }),
+		);
+
+		const result = runBootstrapWithTemplates(project, templatesDirectory);
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${dockerPublishWorkflowPath} template has no push branches list for push.paths-ignore\n`,
+		);
+	});
+
+	it('exits with an error when the startup failure notify template has no types: line', () => {
+		const templatesDirectory = copyTemplates(workflowStartupFailureNotifyWorkflowPath, (content) =>
+			content.replace('    types:\n      - completed\n', ''),
+		);
+		const project = createProject();
+		mkdirSync(join(project, dirname(npmPublishWorkflowPath)), { recursive: true });
+		writeFileSync(join(project, npmPublishWorkflowPath), 'name: npm-publish\n');
+
+		const result = runBootstrapWithTemplates(project, templatesDirectory);
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(
+			`error: ${workflowStartupFailureNotifyWorkflowPath} template has no types: line to add npm-publish before\n`,
+		);
+	});
+
+	it('exits with an error when the dependabot template has no npm entry with directory: /', () => {
+		const templatesDirectory = copyTemplates(dependabotConfigPath, (content) =>
+			content.replace(
+				'  - package-ecosystem: npm\n    directory: /\n',
+				"  - package-ecosystem: npm\n    directory: '/'\n",
+			),
+		);
+		const project = createProject();
+		mkdirSync(join(project, 'packages', 'core'), { recursive: true });
+		writeFileSync(join(project, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'core' }));
+
+		const result = runBootstrapWithTemplates(project, templatesDirectory);
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${dependabotConfigPath} template has no npm entry with directory: /\n`);
 	});
 
 	it('adds prettier and its plugin to devDependencies when the target uses the shared prettier config', () => {
