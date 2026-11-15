@@ -1001,6 +1001,7 @@ describe('sapphire-bootstrap', () => {
 			[
 				'jobs:',
 				'  call-shared-ci:',
+				"    if: github.actor != 'dependabot[bot]'",
 				'    uses: sapphire-sh/github-actions/.github/workflows/docker-publish-template.yml@main',
 				'    permissions:',
 				'      actions: read',
@@ -1112,6 +1113,7 @@ describe('sapphire-bootstrap', () => {
 				'',
 				'jobs:',
 				'  call-shared-ci:',
+				"    if: github.actor != 'dependabot[bot]'",
 				'    uses: sapphire-sh/github-actions/.github/workflows/docker-publish-template.yml@main',
 				'    permissions:',
 				'      actions: read',
