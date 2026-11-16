@@ -1704,4 +1704,94 @@ describe('sapphire-bootstrap', () => {
 			)}\n`,
 		);
 	});
+
+	it('adds the eslint plugin overrides when a tracked package.json depends on eslint-config-next', () => {
+		const project = createProject();
+		writeFileSync(
+			join(project, 'package.json'),
+			`${JSON.stringify({ name: 'example', devDependencies: { eslint: '^10.0.0' } }, null, 2)}\n`,
+		);
+		mkdirSync(join(project, 'packages', 'web'), { recursive: true });
+		writeFileSync(
+			join(project, 'packages', 'web', 'package.json'),
+			JSON.stringify({ name: 'web', devDependencies: { 'eslint-config-next': '^16.0.0' } }),
+		);
+		execFileSync('git', ['init'], { cwd: project });
+		execFileSync('git', ['add', '.'], { cwd: project });
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain('wrote package.json');
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(
+			`${JSON.stringify(
+				{
+					name: 'example',
+					devDependencies: { eslint: '^10.0.0' },
+					overrides: {
+						'eslint-plugin-import': { eslint: '$eslint' },
+						'eslint-plugin-jsx-a11y': { eslint: '$eslint' },
+						'eslint-plugin-react': { eslint: '$eslint' },
+					},
+				},
+				null,
+				2,
+			)}\n`,
+		);
+	});
+
+	it('adds only the missing eslint plugin overrides', () => {
+		const project = createProject();
+		writeFileSync(
+			join(project, 'package.json'),
+			`${JSON.stringify(
+				{
+					name: 'example',
+					devDependencies: { eslint: '^10.0.0', 'eslint-config-next': '^16.0.0' },
+					overrides: { 'eslint-plugin-react': { eslint: '^9.0.0' } },
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(
+			`${JSON.stringify(
+				{
+					name: 'example',
+					devDependencies: { eslint: '^10.0.0', 'eslint-config-next': '^16.0.0' },
+					overrides: {
+						'eslint-plugin-react': { eslint: '^9.0.0' },
+						'eslint-plugin-import': { eslint: '$eslint' },
+						'eslint-plugin-jsx-a11y': { eslint: '$eslint' },
+					},
+				},
+				null,
+				2,
+			)}\n`,
+		);
+	});
+
+	it('leaves package.json unchanged when no package.json depends on eslint-config-next', () => {
+		const project = createProject();
+		const existing = `${JSON.stringify({ name: 'example', devDependencies: { eslint: '^10.0.0' } }, null, 2)}\n`;
+		writeFileSync(join(project, 'package.json'), existing);
+
+		const output = runBootstrap(project);
+
+		expect(output).not.toContain('wrote package.json');
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(existing);
+	});
+
+	it('leaves package.json unchanged when the root package.json does not depend on eslint', () => {
+		const project = createProject();
+		const existing = `${JSON.stringify({ name: 'example', devDependencies: { 'eslint-config-next': '^16.0.0' } }, null, 2)}\n`;
+		writeFileSync(join(project, 'package.json'), existing);
+
+		const output = runBootstrap(project);
+
+		expect(output).not.toContain('wrote package.json');
+		expect(readFileSync(join(project, 'package.json'), 'utf-8')).toBe(existing);
+	});
 });

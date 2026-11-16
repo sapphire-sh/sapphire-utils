@@ -423,6 +423,45 @@ const writePrettierDependencies = () => {
 	console.log('wrote package.json');
 };
 
+const eslintOverridePluginNames = ['eslint-plugin-import', 'eslint-plugin-jsx-a11y', 'eslint-plugin-react'];
+
+const writeEslintOverrides = () => {
+	const filepath = join(cwd, 'package.json');
+
+	if (existsSync(filepath) === false || hasDependency('eslint-config-next') === false) {
+		return;
+	}
+
+	const existing = readFileSync(filepath, 'utf-8');
+	const manifest = JSON.parse(existing);
+
+	if (
+		Object.hasOwn(manifest.dependencies ?? {}, 'eslint') === false &&
+		Object.hasOwn(manifest.devDependencies ?? {}, 'eslint') === false
+	) {
+		return;
+	}
+
+	const missingNames = eslintOverridePluginNames.filter(
+		(name) => Object.hasOwn(manifest.overrides ?? {}, name) === false,
+	);
+
+	if (missingNames.length === 0) {
+		return;
+	}
+
+	const overrides = { ...manifest.overrides };
+
+	for (const name of missingNames) {
+		overrides[name] = { eslint: '$eslint' };
+	}
+
+	manifest.overrides = overrides;
+	const indent = /^[ \t]+/m.exec(existing)?.[0] ?? '\t';
+	writeFileSync(filepath, `${JSON.stringify(manifest, null, indent)}\n`);
+	console.log('wrote package.json');
+};
+
 const collectTemplates = (directory, prefix) => {
 	const relativePaths = [];
 
@@ -549,3 +588,4 @@ for (const relativePath of obsoleteFiles) {
 }
 
 writePrettierDependencies();
+writeEslintOverrides();
