@@ -1389,6 +1389,7 @@ describe('sapphire-bootstrap', () => {
 			[
 				'jobs:',
 				'  call-shared-publish:',
+				"    if: github.actor != 'dependabot[bot]'",
 				'    uses: sapphire-sh/github-actions/.github/workflows/userscript-publish-template.yml@main',
 				'    permissions:',
 				'      actions: read',
