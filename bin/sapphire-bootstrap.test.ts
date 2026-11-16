@@ -28,6 +28,7 @@ const nodeVerifyWorkflowPath = join('.github', 'workflows', 'node-verify.yml');
 const npmPublishWorkflowPath = join('.github', 'workflows', 'npm-publish.yml');
 const dependabotReviewRequestWorkflowPath = join('.github', 'workflows', 'dependabot-review-request.yml');
 const workflowStartupFailureNotifyWorkflowPath = join('.github', 'workflows', 'workflow-startup-failure-notify.yml');
+const pullRequestRebaseWorkflowPath = join('.github', 'workflows', 'pull-request-rebase.yml');
 const workflowValuesPath = join('.github', 'sapphire-workflows.json');
 const codeOwnersPath = join('.github', 'CODEOWNERS');
 const nodeSharedConfigUpdateTemplate = readFileSync(
@@ -1492,8 +1493,8 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, workflowStartupFailureNotifyWorkflowPath), 'utf-8')).toBe(
 			workflowStartupFailureNotifyTemplate.replace(
-				'      - Publish Userscript\n',
-				'      - Publish Userscript\n      - npm-publish\n',
+				'      - pull-request-rebase\n',
+				'      - pull-request-rebase\n      - npm-publish\n',
 			),
 		);
 	});
@@ -1508,6 +1509,32 @@ describe('sapphire-bootstrap', () => {
 
 		expect(readFileSync(join(project, workflowStartupFailureNotifyWorkflowPath), 'utf-8')).toBe(
 			workflowStartupFailureNotifyTemplate,
+		);
+	});
+
+	it('writes the pull request rebase workflow that calls the shared template on issue comments', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`wrote ${pullRequestRebaseWorkflowPath}`);
+		expect(readFileSync(join(project, pullRequestRebaseWorkflowPath), 'utf-8')).toBe(
+			[
+				'name: pull-request-rebase',
+				'',
+				'on:',
+				'  issue_comment:',
+				'    types:',
+				'      - created',
+				'',
+				'jobs:',
+				'  rebase:',
+				'    uses: sapphire-sh/github-actions/.github/workflows/pull-request-rebase-template.yml@main',
+				'    permissions:',
+				'      actions: write',
+				'      pull-requests: write',
+				'',
+			].join('\n'),
 		);
 	});
 
