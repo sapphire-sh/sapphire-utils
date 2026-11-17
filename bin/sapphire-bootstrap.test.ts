@@ -991,7 +991,7 @@ describe('sapphire-bootstrap', () => {
 		);
 	});
 
-	it('passes actions: read and contents: read from the docker publish caller job', () => {
+	it('passes actions: read, contents: read and id-token: write from the docker publish caller job', () => {
 		const project = createProject();
 		writeFileSync(join(project, 'Dockerfile'), 'FROM node\n');
 
@@ -1007,6 +1007,7 @@ describe('sapphire-bootstrap', () => {
 				'    permissions:',
 				'      actions: read',
 				'      contents: read',
+				'      id-token: write',
 				'    secrets: inherit',
 				'    with:',
 				'      image_name: ${{ github.event.repository.name }}',
@@ -1119,6 +1120,7 @@ describe('sapphire-bootstrap', () => {
 				'    permissions:',
 				'      actions: read',
 				'      contents: read',
+				'      id-token: write',
 				'    secrets: inherit',
 				'    with:',
 				'      image_name: ${{ github.event.repository.name }}',
