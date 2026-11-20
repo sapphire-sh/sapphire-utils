@@ -176,7 +176,7 @@ describe('sapphire-bootstrap', () => {
 		expect(existsSync(join(project, nodeSharedConfigUpdateWorkflowPath))).toBe(false);
 	});
 
-	it('copies the daily node utils update workflow with manual dispatch, permissions and token', () => {
+	it('copies the weekly node utils update workflow with manual dispatch, permissions and token', () => {
 		const project = createProject();
 
 		const output = runBootstrap(project);
@@ -188,7 +188,7 @@ describe('sapphire-bootstrap', () => {
 				'',
 				'on:',
 				'  schedule:',
-				"    - cron: '0 0 * * *'",
+				"    - cron: '0 0 * * 0'",
 				'  workflow_dispatch:',
 				'',
 				'jobs:',
@@ -261,7 +261,7 @@ describe('sapphire-bootstrap', () => {
 				'',
 				'on:',
 				'  schedule:',
-				"    - cron: '0 0 * * *'",
+				"    - cron: '0 0 * * 0'",
 				'  workflow_dispatch:',
 				'',
 				'jobs:',
