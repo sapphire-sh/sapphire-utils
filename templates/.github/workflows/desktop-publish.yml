@@ -1,0 +1,20 @@
+name: Publish Desktop App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-shared-publish:
+    if: github.actor != 'dependabot[bot]'
+    uses: sapphire-sh/github-actions/.github/workflows/desktop-publish-template.yml@main
+    permissions:
+      actions: read
+      contents: write
+    secrets: inherit

@@ -23,6 +23,7 @@ const utilsUpdateWorkflowPath = join('.github', 'workflows', 'utils-update.yml')
 const dependabotConfigPath = join('.github', 'dependabot.yml');
 const nodeAuditFixWorkflowPath = join('.github', 'workflows', 'node-audit-fix.yml');
 const dockerPublishWorkflowPath = join('.github', 'workflows', 'docker-publish.yml');
+const desktopPublishWorkflowPath = join('.github', 'workflows', 'desktop-publish.yml');
 const userscriptPublishWorkflowPath = join('.github', 'workflows', 'userscript-publish.yml');
 const nodeVerifyWorkflowPath = join('.github', 'workflows', 'node-verify.yml');
 const npmPublishWorkflowPath = join('.github', 'workflows', 'npm-publish.yml');
@@ -53,6 +54,10 @@ const nodeAuditFixTemplate = readFileSync(
 );
 const dockerPublishTemplate = readFileSync(
 	fileURLToPath(new URL('../templates/.github/workflows/docker-publish.yml', import.meta.url)),
+	'utf-8',
+);
+const desktopPublishTemplate = readFileSync(
+	fileURLToPath(new URL('../templates/.github/workflows/desktop-publish.yml', import.meta.url)),
 	'utf-8',
 );
 const userscriptPublishTemplate = readFileSync(
@@ -1425,6 +1430,70 @@ describe('sapphire-bootstrap', () => {
 		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
 	});
 
+	it('writes the desktop publish workflow with the with.assets value when the JSON file has its entry', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'desktop-publish': { with: { assets: 'src-tauri/target/release/bundle/dmg/*.dmg' } } }),
+		);
+
+		runBootstrap(project);
+
+		expect(readFileSync(join(project, desktopPublishWorkflowPath), 'utf-8')).toBe(
+			`${desktopPublishTemplate}    with:\n      assets: 'src-tauri/target/release/bundle/dmg/*.dmg'\n`,
+		);
+	});
+
+	it('passes actions: read and contents: write from the desktop publish caller job', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'desktop-publish': { with: { assets: 'src-tauri/target/release/bundle/dmg/*.dmg' } } }),
+		);
+
+		runBootstrap(project);
+
+		const content = readFileSync(join(project, desktopPublishWorkflowPath), 'utf-8');
+		expect(content.slice(content.indexOf('jobs:\n'))).toBe(
+			[
+				'jobs:',
+				'  call-shared-publish:',
+				"    if: github.actor != 'dependabot[bot]'",
+				'    uses: sapphire-sh/github-actions/.github/workflows/desktop-publish-template.yml@main',
+				'    permissions:',
+				'      actions: read',
+				'      contents: write',
+				'    secrets: inherit',
+				'    with:',
+				"      assets: 'src-tauri/target/release/bundle/dmg/*.dmg'",
+				'',
+			].join('\n'),
+		);
+	});
+
+	it('skips the desktop publish workflow when the JSON file has no desktop-publish entry', () => {
+		const project = createProject();
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${desktopPublishWorkflowPath}`);
+		expect(existsSync(join(project, desktopPublishWorkflowPath))).toBe(false);
+	});
+
+	it('exits with an error when the desktop-publish entry has no with.assets', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(join(project, workflowValuesPath), JSON.stringify({ 'desktop-publish': {} }));
+
+		const result = spawnSync(process.execPath, [scriptPath], { cwd: project, encoding: 'utf-8' });
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toBe(`error: ${workflowValuesPath} desktop-publish has no with.assets\n`);
+		expect(readdirSync(project, { recursive: true })).toEqual(['.github', workflowValuesPath]);
+	});
+
 	it('writes the node verify workflow when the JSON file has no userscript-publish entry', () => {
 		const project = createProject();
 
@@ -1447,6 +1516,21 @@ describe('sapphire-bootstrap', () => {
 		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
 		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
 		expect(output).toContain(`wrote ${userscriptPublishWorkflowPath}`);
+	});
+
+	it('skips the node verify workflow when the JSON file has a desktop-publish entry', () => {
+		const project = createProject();
+		mkdirSync(join(project, '.github'), { recursive: true });
+		writeFileSync(
+			join(project, workflowValuesPath),
+			JSON.stringify({ 'desktop-publish': { with: { assets: 'src-tauri/target/release/bundle/dmg/*.dmg' } } }),
+		);
+
+		const output = runBootstrap(project);
+
+		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
+		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
+		expect(output).toContain(`wrote ${desktopPublishWorkflowPath}`);
 	});
 
 	it('skips the node verify workflow when the project has its own npm-publish workflow', () => {

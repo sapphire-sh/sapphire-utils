@@ -10,6 +10,7 @@ on:
       - node-ui-update
       - node-utils-update
       - node-verify
+      - Publish Desktop App
       - Publish Userscript
       - pull-request-rebase
     types:

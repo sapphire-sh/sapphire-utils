@@ -29,9 +29,15 @@ const branchesListPattern = /^ {2}push:\n {4}branches:\n(?: {6}- .*\n)*/m;
 const entryKeys = new Set(['push', 'with']);
 const pushKeys = new Set(['paths', 'paths-ignore']);
 const requiredFiles = new Map([[join(workflowsDir, 'docker-publish.yml'), 'Dockerfile']]);
-const entryRequiredFiles = new Set([join(workflowsDir, 'userscript-publish.yml')]);
+const entryRequiredFiles = new Set([
+	join(workflowsDir, 'desktop-publish.yml'),
+	join(workflowsDir, 'userscript-publish.yml'),
+]);
 const dependencyRequiredFiles = new Map([[join(workflowsDir, 'node-ui-update.yml'), '@sapphire-sh/ui']]);
-const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), 'userscript-publish']]);
+const entryExcludedFiles = new Map([
+	[join(workflowsDir, 'node-verify.yml'), ['desktop-publish', 'userscript-publish']],
+]);
+const assetsRequiredEntries = new Set(['desktop-publish', 'userscript-publish']);
 const fileExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), join(workflowsDir, 'npm-publish.yml')]]);
 const pullRequestWorkflows = new Set([
 	'node-shared-config-update',
@@ -515,8 +521,8 @@ for (const [name, values] of Object.entries(workflowValues)) {
 		fail(`${workflowValuesPath} ${name}.with.${codeOwnerWithKey} is already set by ${codeOwnersPath}`);
 	}
 
-	if (name === 'userscript-publish' && values.with?.assets === undefined) {
-		fail(`${workflowValuesPath} userscript-publish has no with.assets`);
+	if (assetsRequiredEntries.has(name) && values.with?.assets === undefined) {
+		fail(`${workflowValuesPath} ${name} has no with.assets`);
 	}
 
 	if (values.push === undefined) {
@@ -552,7 +558,8 @@ const shouldSkip = (outputName) =>
 	(requiredFiles.has(outputName) && existsSync(join(cwd, requiredFiles.get(outputName))) === false) ||
 	(entryRequiredFiles.has(outputName) && Object.hasOwn(workflowValues, basename(outputName, '.yml')) === false) ||
 	(dependencyRequiredFiles.has(outputName) && hasDependency(dependencyRequiredFiles.get(outputName)) === false) ||
-	(entryExcludedFiles.has(outputName) && Object.hasOwn(workflowValues, entryExcludedFiles.get(outputName))) ||
+	(entryExcludedFiles.has(outputName) &&
+		entryExcludedFiles.get(outputName).some((entryName) => Object.hasOwn(workflowValues, entryName))) ||
 	(fileExcludedFiles.has(outputName) && existsSync(join(cwd, fileExcludedFiles.get(outputName))));
 
 for (const relativePath of collectTemplates(templatesDir, '')) {
