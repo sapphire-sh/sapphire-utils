@@ -1518,7 +1518,7 @@ describe('sapphire-bootstrap', () => {
 		expect(output).toContain(`wrote ${userscriptPublishWorkflowPath}`);
 	});
 
-	it('skips the node verify workflow when the JSON file has a desktop-publish entry', () => {
+	it('writes the node verify workflow when the JSON file has a desktop-publish entry', () => {
 		const project = createProject();
 		mkdirSync(join(project, '.github'), { recursive: true });
 		writeFileSync(
@@ -1528,8 +1528,7 @@ describe('sapphire-bootstrap', () => {
 
 		const output = runBootstrap(project);
 
-		expect(output).toContain(`skipped ${nodeVerifyWorkflowPath}`);
-		expect(existsSync(join(project, nodeVerifyWorkflowPath))).toBe(false);
+		expect(output).toContain(`wrote ${nodeVerifyWorkflowPath}`);
 		expect(output).toContain(`wrote ${desktopPublishWorkflowPath}`);
 	});
 

@@ -34,9 +34,7 @@ const entryRequiredFiles = new Set([
 	join(workflowsDir, 'userscript-publish.yml'),
 ]);
 const dependencyRequiredFiles = new Map([[join(workflowsDir, 'node-ui-update.yml'), '@sapphire-sh/ui']]);
-const entryExcludedFiles = new Map([
-	[join(workflowsDir, 'node-verify.yml'), ['desktop-publish', 'userscript-publish']],
-]);
+const entryExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), ['userscript-publish']]]);
 const assetsRequiredEntries = new Set(['desktop-publish', 'userscript-publish']);
 const fileExcludedFiles = new Map([[join(workflowsDir, 'node-verify.yml'), join(workflowsDir, 'npm-publish.yml')]]);
 const pullRequestWorkflows = new Set([
